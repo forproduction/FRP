@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>FRP Master Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  /* =========================================
+     1. BIẾN DÙNG CHUNG VÀ CƠ BẢN
+     ========================================= */
+  :root {
+    --bg: #0f0f10;
+    --card: #1b1b1c;
+    --muted: #9aa0a6;
+    --accent: #00ff9c;
+    --panel: #171717;
+    --border: rgba(255,255,255,0.04);
+    --danger: #ff4d4d;
+    --target: #fbbf24;
+    font-family: "Segoe UI", Roboto, Arial, sans-serif;
+  }
+
+  body, html { 
+    background: var(--bg); 
+    color: #fff; 
+    margin: 0; 
+    height: 100%;
+  }
+
+  /* Text helpers dùng chung */
+  .muted { color: var(--muted); font-size: 13px; }
+  .text-danger { color: var(--danger) !important; font-weight: 600; }
+  .text-accent { color: var(--accent); }
+  .small { font-size: 13px; color: var(--muted); }
+
+  /* =========================================
+     2. CSS CHO THANH MAIN TABS (CHUYỂN TRANG)
+     ========================================= */
+  .main-tabs-container {
+    background: var(--card);
+    border-bottom: 1px solid var(--border);
+    padding: 15px 20px;
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    margin-bottom: 20px;
+  }
+  
+  .main-tab-btn {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid rgba(255,255,255,0.1);
+    font-size: 16px;
+    font-weight: 600;
+    padding: 10px 24px;
+    cursor: pointer;
+    border-radius: 8px;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+
+  .main-tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+  .main-tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+
+  /* =========================================
+     3. CSS RIÊNG CHO FRP SEARCH
+     ========================================= */
+  .search-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+  .search-wrap header { margin-bottom: 30px; text-align: left; }
+  .search-wrap header h2 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: 1px; }
+
+  .control-panel {
+    background: var(--card);
+    padding: 20px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: center;
+    margin-bottom: 25px;
+  }
+  .control-group { display: flex; align-items: center; gap: 8px; }
+  
+  .control-panel input[type="date"], .control-panel select, .control-panel button {
+    background: var(--bg);
+    color: #fff;
+    color-scheme: dark; 
+    border: 1px solid rgba(255,255,255,0.2);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  #calcBtn {
+    background: var(--accent);
+    color: #000;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    transition: 0.2s opacity;
+  }
+  #calcBtn:hover { opacity: 0.8; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+  .card { 
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    padding: 18px; 
+    border: 1px solid var(--border); 
+    border-radius: 10px; 
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .card-label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+  .card-value { font-size: 24px; font-weight: 700; }
+
+  .charts-wrapper { display: flex; flex-wrap: wrap; gap: 20px; }
+  .chart-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 15px;
+    flex: 1;
+    min-width: 300px;
+    height: 300px; 
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  canvas { max-height: 100%; max-width: 100%; }
+
+  /* =========================================
+     4. CSS RIÊNG CHO DASHBOARD 2026
+     ========================================= */
+  .dash-wrap { max-width: 1400px; margin: 6px auto; padding: 8px; }
+  .dash-wrap header { text-align: center; margin: 8px 0 26px; }
+  .dash-wrap header h1 { margin: 0; font-size: 36px; letter-spacing: 1px; font-weight: 600; }
+
+  .table-wrap {
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+    padding: 18px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  }
+
+  table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #e6e6e6; }
+  thead th {
+    text-align: left; padding: 12px 10px; font-weight: 600; color: var(--muted);
+    font-size: 13px; background: transparent; border-bottom: 1px solid rgba(255,255,255,0.03);
+  }
+  tbody td {
+    padding: 6px 8px; border-bottom: 1px dashed rgba(255,255,255,0.03);
+    font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  tbody tr.total { font-weight: 700; background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); }
+
+  .col-month { width: 150px; color: var(--accent); font-weight: 600; }
+  .col-num { text-align: right; font-variant-numeric: tabular-nums; }
+  
+  .dash-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+  .dash-tab-btn { padding: 8px 16px; border: none; border-radius: 6px; background: #2a2a2a; color: white; cursor: pointer; }
+  .dash-tab-btn.active { background: #00ff9c; color: black; font-weight: bold; }
+
+  @media(max-width:900px){
+    .dash-wrap { padding: 8px; }
+    .dash-wrap header h1 { font-size: 28px; }
+    table { font-size: 13px; }
+    .col-month { width: 120px; }
+    .main-tabs-container { flex-direction: column; padding: 10px; }
+  }
+
+</style>
+</head>
+
+<body>
+
+  <div class="main-tabs-container">
+    <button class="main-tab-btn active" onclick="switchMainTab('view-search', this)">🔍 FRP Search</button>
+    <button class="main-tab-btn" onclick="switchMainTab('view-dashboard', this)">📊 Dashboard 2026</button>
+  </div>
+
+  <div id="view-search" style="display: block;">
+    <div class="search-wrap">
+      <header>
+        <h2>FRP Search</h2>
+      </header>
+
+      <div class="control-panel">
+        <div class="control-group">
+          <span class="muted">Start:</span>
+          <input type="date" id="start">
+          <select id="shift1"><option>A</option><option>B</option><option>C</option></select>
+        </div>
+        <div class="control-group">
+          <span class="muted">End:</span>
+          <input type="date" id="end">
+          <select id="shift2"><option>A</option><option>B</option><option>C</option></select>
+        </div>
+        <div class="control-group">
+          <span class="muted">Line:</span>
+          <select id="line">
+            <option value="STA">STA</option>
+            <option value="NGR">NGR</option>
+          </select>
+        </div>
+        <button onclick="send()" id="calcBtn">Calculate Data</button>
+      </div>
+
+      <div id="output" class="grid"></div>
+
+      <div class="charts-wrapper" id="chartsContainer" style="display: none;">
+        <div class="chart-box"><canvas id="pieChart"></canvas></div>
+        <div class="chart-box"><canvas id="barChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-dashboard" style="display: none;">
+    <div class="dash-wrap">
+      <header>
+        <h1>FRP Dashboard 2026</h1>
+         <div id="last-update" class="small muted"></div>
+         <div id="data-source" class="small muted"></div>
+         <div id="next-refresh" class="small muted"></div>
+      </header>
+
+      <div class="dash-tabs">
+        <button class="dash-tab-btn active" onclick="switchTab('total',event)">TOTAL</button>
+        <button class="dash-tab-btn" onclick="switchTab('v05',event)">V05</button>
+        <button class="dash-tab-btn" onclick="switchTab('v0302',event)">V03-02</button>
+      </div>
+      
+      <div style="text-align:right;margin-bottom:10px; padding-right:10px;">
+        <button onclick="clearCache()" style="padding:6px 12px;border-radius:6px;border:none;background:#00ff9c;color:#000;font-weight:600;cursor:pointer;">
+          Refresh Data
+        </button>
+      </div>
+      
+      <div class="table-wrap">
+        <table id="table-total">
+          <thead>
+            <tr>
+              <th class="col-month">Month</th><th>Total Q</th><th>Total UQ</th><th>Total Product</th><th>A grade</th><th>Total Waste</th><th>Waste %</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-total"></tbody>
+        </table>
+
+        <table id="table-v05" style="display:none">
+          <thead>
+            <tr>
+              <th class="col-month">Month</th><th>Qualified</th><th>Unqualified</th><th>Total Product</th><th>A grade</th><th>Waste Kg</th><th>Waste %</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-v05"></tbody>
+        </table>
+
+        <table id="table-v0302" style="display:none">
+          <thead>
+            <tr>
+              <th class="col-month">Month</th><th>Qualified</th><th>Unqualified</th><th>Total Product</th><th>A grade</th><th>Waste Kg</th><th>Waste %</th>
+            </tr>
+          </thead>
+          <tbody id="tbody-v0302"></tbody>
+        </table>
+      </div>
+
+      <div style="height:20px;"></div>
+      <div class="small muted">https://docs.google.com/spreadsheets/d/1p9do1QOMB4p_32z-EMHdqMhl5RKz22WcAqLwAntX9Eo/edit?usp=sharing</div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================
+    // LOGIC CHUYỂN MAIN TABS
+    // =========================================
+    function switchMainTab(viewId, btn) {
+      document.getElementById('view-search').style.display = 'none';
+      document.getElementById('view-dashboard').style.display = 'none';
+      document.getElementById(viewId).style.display = 'block';
+
+      document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    // =========================================
+    // JAVASCRIPT: FRP SEARCH
+    // =========================================
+    const API_URL = "https://script.google.com/macros/s/AKfycbxptUF9IEwEmhHmwBIb1R5BOQ1aMlU39mtul7ChwWdJv5eiOAuaoi3Wn7QeetGuwyIQHg/exec";
+
+    let pieChartInstance = null;
+    let barChartInstance = null;
+
+    Chart.defaults.color = '#9aa0a6';
+    Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+    function formatNumber(val) {
+      if (val === undefined || val === null || val === "") return "-";
+      const num = Number(val);
+      if (isNaN(num)) return val;
+      return num.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    function formatPercent(val) {
+      if (val === undefined || val === null || val === "") return "-";
+      const num = Number(val);
+      if (isNaN(num)) return val;
+      return (num * 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+    }
+
+    function formatPercentInt(val) {
+      if (val === undefined || val === null || val === "") return "-";
+      const num = Number(val);
+      if (isNaN(num)) return val;
+      return Math.round(num * 100).toLocaleString('en-US') + "%";
+    }
+
+    async function send() {
+      const btn = document.getElementById("calcBtn");
+      btn.innerText = "Loading...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          body: JSON.stringify({
+            startDate: document.getElementById("start").value,
+            startShift: document.getElementById("shift1").value,
+            endDate: document.getElementById("end").value,
+            endShift: document.getElementById("shift2").value,
+            line: document.getElementById("line").value
+          })
+        });
+
+        const data = await res.json();
+        render(data);
+      } catch (err) {
+        alert("Error fetching data!");
+        console.error(err);
+      } finally {
+        btn.innerText = "Calculate Data";
+        btn.disabled = false;
+      }
+    }
+
+    function render(d) {
+      const aGradeVal = Number(d.agrade) * 100;
+      const wastePercVal = Number(d.wastePercent) * 100;
+
+      const aGradeClass = aGradeVal < 99 ? "text-danger" : "text-accent";
+      const wasteClass = wastePercVal > 5.3 ? "text-danger" : "text-accent";
+
+      document.getElementById("output").innerHTML = `
+        <div class="card"><div class="card-label">Material (kg)</div><div class="card-value">${formatNumber(d.material)}</div></div>
+        <div class="card"><div class="card-label">Additives (kg)</div><div class="card-value">${formatNumber(d.additives)}</div></div>
+        <div class="card"><div class="card-label">Input (kg)</div><div class="card-value">${formatNumber(d.input)}</div></div>
+        <div class="card"><div class="card-label">Q (Qualified)</div><div class="card-value text-accent">${formatNumber(d.q)}</div></div>
+        <div class="card"><div class="card-label">UQ (Unqualified)</div><div class="card-value text-danger">${formatNumber(d.uq)}</div></div>
+        <div class="card"><div class="card-label">Waste (kg)</div><div class="card-value text-danger">${formatNumber(d.waste)}</div></div>
+        <div class="card"><div class="card-label">Throughput (kg/h)</div><div class="card-value">${formatNumber(d.throughput)}</div></div>
+        <div class="card"><div class="card-label">A-grade</div><div class="card-value ${aGradeClass}">${formatPercentInt(d.agrade)}</div></div>
+        <div class="card"><div class="card-label">Waste %</div><div class="card-value ${wasteClass}">${formatPercent(d.wastePercent)}</div></div>
+        <div class="card"><div class="card-label">Productivity</div><div class="card-value">${formatPercent(d.productivity)}</div></div>
+      `;
+
+      document.getElementById("chartsContainer").style.display = "flex";
+      drawCharts(d, aGradeVal, wastePercVal);
+    }
+
+    const targetLinePlugin = {
+      id: 'targetLinePlugin',
+      afterDatasetsDraw: (chart) => {
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+        const yAxis = chart.scales.y;
+
+        ctx.save();
+        ctx.lineWidth = 2;
+        ctx.setLineDash([4, 4]);
+
+        const aGradeBar = meta.data[0];
+        if (aGradeBar) {
+          const y99 = yAxis.getPixelForValue(99);
+          ctx.strokeStyle = '#fbbf24'; 
+          ctx.beginPath();
+          ctx.moveTo(aGradeBar.x - aGradeBar.width/2 - 5, y99);
+          ctx.lineTo(aGradeBar.x + aGradeBar.width/2 + 5, y99);
+          ctx.stroke();
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = '10px Arial';
+          ctx.fillText('99%', aGradeBar.x + aGradeBar.width/2 + 8, y99 + 3);
+        }
+
+        const wasteBar = meta.data[1];
+        if (wasteBar) {
+          const y5_3 = yAxis.getPixelForValue(5.3);
+          ctx.strokeStyle = '#fbbf24'; 
+          ctx.beginPath();
+          ctx.moveTo(wasteBar.x - wasteBar.width/2 - 5, y5_3);
+          ctx.lineTo(wasteBar.x + wasteBar.width/2 + 5, y5_3);
+          ctx.stroke();
+          ctx.fillStyle = '#fbbf24';
+          ctx.font = '10px Arial';
+          ctx.fillText('5.3%', wasteBar.x + wasteBar.width/2 + 8, y5_3 + 3);
+        }
+        ctx.restore();
+      }
+    };
+
+    function drawCharts(d, aGradeVal, wastePercVal) {
+      if (pieChartInstance) pieChartInstance.destroy();
+      if (barChartInstance) barChartInstance.destroy();
+
+      const pieCtx = document.getElementById("pieChart").getContext("2d");
+      pieChartInstance = new Chart(pieCtx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Qualified (Q)', 'Waste'],
+          datasets: [{
+            data: [Number(d.q), Number(d.waste)],
+            backgroundColor: ['#00ff9c', '#ff4d4d'],
+            borderWidth: 0,
+            hoverOffset: 4
+          }]
+        },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      const barColors = [
+        aGradeVal < 99 ? '#ff4d4d' : '#00ff9c',
+        wastePercVal > 5.3 ? '#ff4d4d' : '#00ff9c',
+        '#3b82f6'
+      ];
+
+      const barCtx = document.getElementById("barChart").getContext("2d");
+      barChartInstance = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+          labels: ['A-grade', 'Waste %', 'Productivity'],
+          datasets: [{
+            label: 'Percentage (%)',
+            data: [aGradeVal, wastePercVal, Number(d.productivity) * 100],
+            backgroundColor: barColors,
+            borderRadius: 4
+          }]
+        },
+        plugins: [targetLinePlugin],
+        options: {
+          responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+          scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value + "%" } } } }
+        }
+      });
+    }
+
+
+    // =========================================
+    // JAVASCRIPT: DASHBOARD 2026
+    // =========================================
+    const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQNEKvIm7KuWpIQoBoRXmV1S1cbAf_GR9ac0Y14mMgAIm5ZmzKGoxNwSCUccween_weDpkEPuJjfl4g/pub?gid=13467268&single=true&output=csv";
+    const CACHE_TIME = 600000; 
+    const REFRESH_INTERVAL = 60000; 
+
+    let lastCSV = "";
+    let countdown = REFRESH_INTERVAL/1000;
+
+    const tbodyTotal = document.getElementById("tbody-total");
+    const tbodyV05 = document.getElementById("tbody-v05");
+    const tbodyV0302 = document.getElementById("tbody-v0302");
+
+    function setSource(type){ document.getElementById("data-source").innerText = "Data source: " + type; }
+    
+    function startCountdown(){
+      setInterval(()=>{
+        countdown--;
+        if(countdown<=0) countdown = REFRESH_INTERVAL/1000;
+        document.getElementById("next-refresh").innerText = "Next refresh: " + countdown + "s";
+      },1000);
+    }
+      
+    function updateLastTime(){
+      const t = localStorage.getItem("frp_csv_cache_time");
+      if(!t) return;
+      const d = new Date(Number(t));
+      document.getElementById("last-update").innerText = "Last updated: " + d.toLocaleString();
+    }
+      
+    function parseCSV(text){
+      const rows = []; let cur = ""; let row = []; let inQuotes = false;
+      for (let i=0; i<text.length; i++){
+        const ch = text[i];
+        if (ch === '"' ){
+          if (inQuotes && text[i+1] === '"'){ cur += '"'; i++; } 
+          else { inQuotes = !inQuotes; }
+          continue;
+        }
+        if (!inQuotes && (ch === ',')){ row.push(cur); cur = ""; continue; }
+        if (!inQuotes && (ch === '\n' || ch === '\r')){
+          if (ch === '\r' && text[i+1] === '\n'){ continue; }
+          row.push(cur); rows.push(row); row = []; cur = ""; continue;
+        }
+        cur += ch;
+      }
+      if (cur !== "" || row.length > 0){ row.push(cur); rows.push(row); }
+      return rows;
+    }
+
+    function formatNumberRaw(v){
+      if (v === undefined || v === null) return "-";
+      v = String(v).trim();
+      if (v === "" || v === "-" || v === " - " || v === "–") return "-";
+      const n = Number(v.replace(/,/g,'').replace(/\s/g,''));
+      if (isFinite(n)) return n.toLocaleString('en-US', {maximumFractionDigits: (n%1!==0 ? 2:0)});
+      return v;
+    }
+
+    function formatPercentRaw(v){
+      if (v === undefined || v === null) return "-";
+      v = String(v).trim();
+      if (v === "" || v === "-" || v === " - " || v === "–") return "-";
+      const n = Number(v.replace(/,/g,'').replace(/%/g,'').replace(/\s/g,''));
+      if (isFinite(n)) return (Math.round(n*100)/100).toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:2}) + "%";
+      if (v.endsWith('%')) return v;
+      return v;
+    }
+      
+    function colorize(val,type){
+      const num = Number(String(val).replace(/,/g,'').replace('%',''));
+      if(type==="waste" && num>5.3) return '<span class="text-danger">'+formatPercentRaw(val)+'</span>';
+      if(type==="grade" && num<99) return '<span class="text-danger">'+formatPercentRaw(val)+'</span>';
+      return formatPercentRaw(val);
+    }
+      
+    function buildTable(rows){
+      if (!rows || rows.length < 2) {
+        tbodyTotal.innerHTML = '<tr><td colspan="7">No data</td></tr>';
+        return;
+      }
+
+      const months = new Array(13).fill(null);
+      for (let i=1; i<rows.length; i++){
+        const r = rows[i];
+        if (!r || r.length === 0) continue;
+        const rawMonth = (r[0]||"").trim();
+        if (!rawMonth) continue;
+        let m = null;
+        const dotMatch = rawMonth.match(/\.([0-9]{1,2})$/);
+        if (dotMatch) m = Number(dotMatch[1]);
+        if (m>=1 && m<=12) months[m] = r;
+      }
+
+      let outTotal = "", outV05 = "", outV03 = "";
+
+      for (let m=1; m<=12; m++){
+        const row = months[m];
+        if (!row){
+          outTotal += `<tr><td class="col-month">${m}</td><td colspan="6">-</td></tr>`;
+          outV05 += `<tr><td class="col-month">${m}</td><td colspan="6">-</td></tr>`;
+          outV03 += `<tr><td class="col-month">${m}</td><td colspan="6">-</td></tr>`;
+        } else {
+          outTotal += `<tr><td class="col-month">${m}</td><td class="col-num">${formatNumberRaw(row[1])}</td><td class="col-num">${formatNumberRaw(row[2])}</td><td class="col-num">${formatNumberRaw(row[3])}</td><td class="col-num">${colorize(row[4],'grade')}</td><td class="col-num">${formatNumberRaw(row[5])}</td><td class="col-num">${colorize(row[6],'waste')}</td></tr>`;
+          outV05 += `<tr><td class="col-month">${m}</td><td class="col-num">${formatNumberRaw(row[7])}</td><td class="col-num">${formatNumberRaw(row[8])}</td><td class="col-num">${formatNumberRaw(row[9])}</td><td class="col-num">${colorize(row[10],'grade')}</td><td class="col-num">${formatNumberRaw(row[11])}</td><td class="col-num">${colorize(row[12],'waste')}</td></tr>`;
+          outV03 += `<tr><td class="col-month">${m}</td><td class="col-num">${formatNumberRaw(row[13])}</td><td class="col-num">${formatNumberRaw(row[14])}</td><td class="col-num">${formatNumberRaw(row[15])}</td><td class="col-num">${colorize(row[16],'grade')}</td><td class="col-num">${formatNumberRaw(row[17])}</td><td class="col-num">${colorize(row[18],'waste')}</td></tr>`;
+        }
+      }
+
+      tbodyTotal.innerHTML = outTotal; tbodyV05.innerHTML = outV05; tbodyV0302.innerHTML = outV03;
+      
+      const totalRow = rows.find(r => r && /total/i.test((r[0]||"").trim()));
+      if(totalRow){
+        tbodyTotal.innerHTML += `<tr class="total"><td>Total</td><td class="col-num">${formatNumberRaw(totalRow[1])}</td><td class="col-num">${formatNumberRaw(totalRow[2])}</td><td class="col-num">${formatNumberRaw(totalRow[3])}</td><td class="col-num">${colorize(totalRow[4],'grade')}</td><td class="col-num">${formatNumberRaw(totalRow[5])}</td><td class="col-num">${colorize(totalRow[6],'waste')}</td></tr>`;
+        tbodyV05.innerHTML += `<tr class="total"><td>Total</td><td class="col-num">${formatNumberRaw(totalRow[7])}</td><td class="col-num">${formatNumberRaw(totalRow[8])}</td><td class="col-num">${formatNumberRaw(totalRow[9])}</td><td class="col-num">${colorize(totalRow[10],'grade')}</td><td class="col-num">${formatNumberRaw(totalRow[11])}</td><td class="col-num">${colorize(totalRow[12],'waste')}</td></tr>`;
+        tbodyV0302.innerHTML += `<tr class="total"><td>Total</td><td class="col-num">${formatNumberRaw(totalRow[13])}</td><td class="col-num">${formatNumberRaw(totalRow[14])}</td><td class="col-num">${formatNumberRaw(totalRow[15])}</td><td class="col-num">${colorize(totalRow[16],'grade')}</td><td class="col-num">${formatNumberRaw(totalRow[17])}</td><td class="col-num">${colorize(totalRow[18],'waste')}</td></tr>`;
+      }
+    }
+
+    async function loadAndRender(){
+      try{
+        const cached = localStorage.getItem("frp_csv_cache");
+        const cacheTime = localStorage.getItem("frp_csv_cache_time");
+        if (cached && cacheTime && (Date.now() - cacheTime < CACHE_TIME)){
+          const rows = parseCSV(cached);
+          buildTable(rows); updateLastTime(); setSource("CACHE");
+          return;
+        }
+        const r = await fetch(CSV_URL);
+        if (!r.ok) throw new Error("Network error " + r.status);
+        const txt = await r.text();
+        localStorage.setItem("frp_csv_cache", txt);
+        localStorage.setItem("frp_csv_cache_time", Date.now());
+        const rows = parseCSV(txt);
+        buildTable(rows); updateLastTime(); setSource("LIVE");
+      }catch(err){
+        console.error(err);
+      }
+    }
+
+    function switchTab(tab,e){
+      document.getElementById("table-total").style.display="none";
+      document.getElementById("table-v05").style.display="none";
+      document.getElementById("table-v0302").style.display="none";
+      document.getElementById("table-"+tab).style.display="table";
+      document.querySelectorAll(".dash-tab-btn").forEach(b=>b.classList.remove("active"));
+      if(e) e.target.classList.add("active");
+    }
+
+    function clearCache(){
+      localStorage.removeItem("frp_csv_cache");
+      localStorage.removeItem("frp_csv_cache_time");
+      loadAndRender();
+    }
+
+    // Khởi chạy Dashboard data khi load
+    loadAndRender();
+    startCountdown();
+    setInterval(loadAndRender, REFRESH_INTERVAL);
+
+  </script>
+</body>
+</html>
