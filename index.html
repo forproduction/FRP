@@ -164,6 +164,214 @@
   .dash-tab-btn { padding: 8px 16px; border: none; border-radius: 6px; background: #2a2a2a; color: white; cursor: pointer; }
   .dash-tab-btn.active { background: #00ff9c; color: black; font-weight: bold; }
 
+  /* =========================================
+     5. CSS CHO HISTORY PANEL
+     ========================================= */
+  .history-section {
+    margin-top: 30px;
+    border-top: 1px solid rgba(255,255,255,0.07);
+    padding-top: 20px;
+  }
+  .history-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .history-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .history-count {
+    background: var(--accent);
+    color: #000;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 20px;
+    min-width: 20px;
+    text-align: center;
+  }
+  .history-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .btn-secondary {
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-secondary:hover { background: #3a3a3a; }
+  .btn-danger-sm {
+    background: transparent;
+    color: var(--danger);
+    border: 1px solid rgba(255,77,77,0.3);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-danger-sm:hover { background: rgba(255,77,77,0.1); }
+  .btn-export {
+    background: #1a3a2a;
+    color: var(--accent);
+    border: 1px solid rgba(0,255,156,0.3);
+    padding: 7px 14px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .btn-export:hover { background: #1e4a32; }
+
+  .history-table-wrap {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .history-table thead th {
+    background: rgba(255,255,255,0.03);
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 12px;
+    color: var(--muted);
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    white-space: nowrap;
+  }
+  .history-table tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: #e0e0e0;
+    font-size: 13px;
+  }
+  .history-table tbody tr:last-child td { border-bottom: none; }
+  .history-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .history-table .col-time { color: var(--muted); font-size: 12px; }
+  .history-table .col-line { 
+    color: var(--accent); 
+    font-weight: 700; 
+    font-size: 12px;
+  }
+  .history-table .val-danger { color: var(--danger); font-weight: 600; }
+  .history-table .val-accent { color: var(--accent); font-weight: 600; }
+  .history-table .btn-load-row {
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid rgba(0,255,156,0.2);
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: 0.2s;
+  }
+  .history-table .btn-load-row:hover { background: rgba(0,255,156,0.1); }
+  .history-table .btn-del-row {
+    background: transparent;
+    color: var(--muted);
+    border: none;
+    padding: 3px 6px;
+    border-radius: 4px;
+    font-size: 14px;
+    cursor: pointer;
+    transition: 0.2s;
+  }
+  .history-table .btn-del-row:hover { color: var(--danger); }
+  .history-empty {
+    text-align: center;
+    padding: 30px;
+    color: var(--muted);
+    font-size: 14px;
+  }
+
+  /* Save dialog overlay */
+  .save-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+  }
+  .save-overlay.show { display: flex; }
+  .save-dialog {
+    background: #1e1e1f;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 28px 32px;
+    min-width: 320px;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+  }
+  .save-dialog h3 { margin: 0 0 8px; font-size: 18px; }
+  .save-dialog p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+  .save-dialog input[type="text"] {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 9px 12px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    margin-bottom: 18px;
+    box-sizing: border-box;
+  }
+  .save-dialog input[type="text"]:focus { outline: none; border-color: var(--accent); }
+  .save-dialog-btns { display: flex; gap: 10px; justify-content: flex-end; }
+  .btn-save-confirm {
+    background: var(--accent);
+    color: #000;
+    border: none;
+    padding: 9px 20px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn-save-confirm:hover { opacity: 0.85; }
+  .btn-save-skip {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 9px 20px;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  .btn-save-skip:hover { color: #fff; }
+
   @media(max-width:900px){
     .dash-wrap { padding: 8px; }
     .dash-wrap header h1 { font-size: 28px; }
@@ -214,6 +422,38 @@
       <div class="charts-wrapper" id="chartsContainer" style="display: none;">
         <div class="chart-box"><canvas id="pieChart"></canvas></div>
         <div class="chart-box"><canvas id="barChart"></canvas></div>
+      </div>
+
+      <!-- HISTORY SECTION -->
+      <div class="history-section">
+        <div class="history-header">
+          <div class="history-title">
+            📋 Search History
+            <span class="history-count" id="historyCount">0</span>
+          </div>
+          <div class="history-actions">
+            <button class="btn-export" onclick="exportExcel()">⬇ Export Excel</button>
+            <button class="btn-danger-sm" onclick="clearAllHistory()">🗑 Clear All</button>
+          </div>
+        </div>
+        <div class="history-table-wrap">
+          <div id="historyTableContainer">
+            <div class="history-empty">No search history yet. Search and save results to see them here.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SAVE DIALOG -->
+  <div class="save-overlay" id="saveOverlay">
+    <div class="save-dialog">
+      <h3>💾 Save This Result?</h3>
+      <p>Add an optional note to remember this search.</p>
+      <input type="text" id="saveNote" placeholder="Note (optional, e.g. Week 12 STA check)..." maxlength="80">
+      <div class="save-dialog-btns">
+        <button class="btn-save-skip" onclick="dismissSave()">Don't Save</button>
+        <button class="btn-save-confirm" onclick="confirmSave()">Save</button>
       </div>
     </div>
   </div>
@@ -337,6 +577,7 @@
 
         const data = await res.json();
         render(data);
+        showSaveDialog(data);
       } catch (err) {
         alert("Error fetching data!");
         console.error(err);
@@ -616,6 +857,178 @@
     loadAndRender();
     startCountdown();
     setInterval(loadAndRender, REFRESH_INTERVAL);
+
+    // =========================================
+    // JAVASCRIPT: SEARCH HISTORY & EXPORT
+    // =========================================
+    const HISTORY_KEY = "frp_search_history";
+    let pendingSaveData = null;
+
+    function getHistory() {
+      try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); }
+      catch(e) { return []; }
+    }
+
+    function saveHistory(arr) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(arr));
+    }
+
+    function showSaveDialog(data) {
+      pendingSaveData = data;
+      document.getElementById("saveNote").value = "";
+      document.getElementById("saveOverlay").classList.add("show");
+      setTimeout(function(){ document.getElementById("saveNote").focus(); }, 100);
+    }
+
+    function dismissSave() {
+      document.getElementById("saveOverlay").classList.remove("show");
+      pendingSaveData = null;
+    }
+
+    function confirmSave() {
+      if (!pendingSaveData) return;
+      var note = document.getElementById("saveNote").value.trim();
+      var history = getHistory();
+      var entry = {
+        id: Date.now(),
+        savedAt: new Date().toLocaleString('vi-VN'),
+        note: note,
+        params: {
+          startDate: document.getElementById("start").value,
+          startShift: document.getElementById("shift1").value,
+          endDate: document.getElementById("end").value,
+          endShift: document.getElementById("shift2").value,
+          line: document.getElementById("line").value
+        },
+        data: pendingSaveData
+      };
+      history.unshift(entry);
+      saveHistory(history);
+      dismissSave();
+      renderHistory();
+    }
+
+    function deleteHistoryEntry(id) {
+      var history = getHistory().filter(function(e){ return e.id !== id; });
+      saveHistory(history);
+      renderHistory();
+    }
+
+    function clearAllHistory() {
+      if (!confirm("Clear all search history?")) return;
+      saveHistory([]);
+      renderHistory();
+    }
+
+    function loadHistoryEntry(id) {
+      var entry = getHistory().find(function(e){ return e.id === id; });
+      if (!entry) return;
+      document.getElementById("start").value = entry.params.startDate;
+      document.getElementById("shift1").value = entry.params.startShift;
+      document.getElementById("end").value = entry.params.endDate;
+      document.getElementById("shift2").value = entry.params.endShift;
+      document.getElementById("line").value = entry.params.line;
+      render(entry.data);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function renderHistory() {
+      var history = getHistory();
+      document.getElementById("historyCount").textContent = history.length;
+      var container = document.getElementById("historyTableContainer");
+      if (history.length === 0) {
+        container.innerHTML = '<div class="history-empty">No search history yet. Search and save results to see them here.</div>';
+        return;
+      }
+      var rows = "";
+      history.forEach(function(e) {
+        var d = e.data;
+        var aVal = Number(d.agrade) * 100;
+        var wVal = Number(d.wastePercent) * 100;
+        var aClass = aVal < 99 ? "val-danger" : "val-accent";
+        var wClass = wVal > 5.3 ? "val-danger" : "val-accent";
+        var pVal = (Number(d.productivity) * 100).toFixed(2) + "%";
+        rows += '<tr>' +
+          '<td class="col-time">' + e.savedAt + '</td>' +
+          '<td class="col-line">' + e.params.line + '</td>' +
+          '<td>' + e.params.startDate + ' <b>' + e.params.startShift + '</b></td>' +
+          '<td>' + e.params.endDate + ' <b>' + e.params.endShift + '</b></td>' +
+          '<td>' + (e.note || '<span style="color:var(--muted);font-style:italic;">—</span>') + '</td>' +
+          '<td>' + formatNumber(d.material) + '</td>' +
+          '<td>' + formatNumber(d.input) + '</td>' +
+          '<td class="val-accent">' + formatNumber(d.q) + '</td>' +
+          '<td class="val-danger">' + formatNumber(d.waste) + '</td>' +
+          '<td>' + formatNumber(d.throughput) + '</td>' +
+          '<td class="' + aClass + '">' + aVal.toFixed(0) + '%</td>' +
+          '<td class="' + wClass + '">' + wVal.toFixed(2) + '%</td>' +
+          '<td>' + pVal + '</td>' +
+          '<td>' +
+            '<button class="btn-load-row" onclick="loadHistoryEntry(' + e.id + ')">Load</button> ' +
+            '<button class="btn-del-row" onclick="deleteHistoryEntry(' + e.id + ')" title="Delete">✕</button>' +
+          '</td>' +
+        '</tr>';
+      });
+      container.innerHTML =
+        '<table class="history-table">' +
+          '<thead><tr>' +
+            '<th>Saved At</th><th>Line</th><th>Start</th><th>End</th><th>Note</th>' +
+            '<th>Material (kg)</th><th>Input (kg)</th><th>Q (kg)</th><th>Waste (kg)</th>' +
+            '<th>Throughput</th><th>A-grade</th><th>Waste %</th><th>Productivity</th><th>Actions</th>' +
+          '</tr></thead>' +
+          '<tbody>' + rows + '</tbody>' +
+        '</table>';
+    }
+
+    function exportExcel() {
+      var history = getHistory();
+      if (history.length === 0) { alert("No history to export!"); return; }
+      var headers = ["Saved At","Line","Start Date","Start Shift","End Date","End Shift","Note",
+        "Material (kg)","Additives (kg)","Input (kg)","Q Qualified (kg)","UQ Unqualified (kg)",
+        "Waste (kg)","Throughput (kg/h)","A-grade (%)","Waste (%)","Productivity (%)"];
+      var csvRows = [headers.join(",")];
+      history.forEach(function(e) {
+        var d = e.data;
+        var row = [
+          '"' + e.savedAt + '"',
+          e.params.line,
+          e.params.startDate,
+          e.params.startShift,
+          e.params.endDate,
+          e.params.endShift,
+          '"' + (e.note || '') + '"',
+          Number(d.material) || 0,
+          Number(d.additives) || 0,
+          Number(d.input) || 0,
+          Number(d.q) || 0,
+          Number(d.uq) || 0,
+          Number(d.waste) || 0,
+          Number(d.throughput) || 0,
+          ((Number(d.agrade) || 0) * 100).toFixed(2),
+          ((Number(d.wastePercent) || 0) * 100).toFixed(2),
+          ((Number(d.productivity) || 0) * 100).toFixed(2)
+        ];
+        csvRows.push(row.join(","));
+      });
+      var csvContent = "\uFEFF" + csvRows.join("\r\n");
+      var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement("a");
+      var now = new Date();
+      var fname = "FRP_History_" + now.getFullYear() + String(now.getMonth()+1).padStart(2,'0') + String(now.getDate()).padStart(2,'0') + ".csv";
+      a.href = url; a.download = fname; a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    document.getElementById("saveOverlay").addEventListener("click", function(e) {
+      if (e.target === this) dismissSave();
+    });
+
+    document.getElementById("saveNote").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") confirmSave();
+      if (e.key === "Escape") dismissSave();
+    });
+
+    renderHistory();
 
   </script>
 </body>
