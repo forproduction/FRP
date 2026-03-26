@@ -400,12 +400,12 @@
         <div class="control-group">
           <span class="muted">Start:</span>
           <input type="date" id="start">
-          <select id="shift1"><option>A</option><option>B</option><option>C</option></select>
+        <select id="shift1"><option value="A">A</option> <option value="B">B</option></select>
         </div>
         <div class="control-group">
           <span class="muted">End:</span>
           <input type="date" id="end">
-          <select id="shift2"><option>A</option><option>B</option><option>C</option></select>
+         <select id="shift2"><option value="A">A</option> <option value="B">B</option></select>
         </div>
         <div class="control-group">
           <span class="muted">Line:</span>
@@ -418,7 +418,15 @@
       </div>
 
       <div id="output" class="grid"></div>
-
+      
+<div id="saveAction" style="display:none; margin-bottom:20px;">
+  <input type="text" id="quickNote" placeholder="Note (optional...)" 
+    style="padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#111;color:#fff;">
+  
+  <button onclick="saveNow()" class="btn-save-confirm">Save</button>
+  <button onclick="skipSave()" class="btn-save-skip">Skip</button>
+</div>
+      
       <div class="charts-wrapper" id="chartsContainer" style="display: none;">
         <div class="chart-box"><canvas id="pieChart"></canvas></div>
         <div class="chart-box"><canvas id="barChart"></canvas></div>
@@ -441,19 +449,6 @@
             <div class="history-empty">No search history yet. Search and save results to see them here.</div>
           </div>
         </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- SAVE DIALOG -->
-  <div class="save-overlay" id="saveOverlay">
-    <div class="save-dialog">
-      <h3>💾 Save This Result?</h3>
-      <p>Add an optional note to remember this search.</p>
-      <input type="text" id="saveNote" placeholder="Note (optional, e.g. Week 12 STA check)..." maxlength="80">
-      <div class="save-dialog-btns">
-        <button class="btn-save-skip" onclick="dismissSave()">Don't Save</button>
-        <button class="btn-save-confirm" onclick="confirmSave()">Save</button>
       </div>
     </div>
   </div>
@@ -558,6 +553,15 @@
       return Math.round(num * 100).toLocaleString('en-US') + "%";
     }
 
+    function formatDateDisplay(dateStr, shift) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  const day = String(d.getDate()).padStart(2,'0');
+  const month = String(d.getMonth()+1).padStart(2,'0');
+  const year = d.getFullYear();
+  return `${day}-${month}-${year} (${shift})`;
+}
+    
     async function send() {
       const btn = document.getElementById("calcBtn");
       btn.innerText = "Loading...";
@@ -577,7 +581,7 @@
 
         const data = await res.json();
         render(data);
-        showSaveDialog(data);
+        pendingSaveData = data; document.getElementById("saveAction").style.display = "block";
       } catch (err) {
         alert("Error fetching data!");
         console.error(err);
@@ -908,6 +912,41 @@
       renderHistory();
     }
 
+    function saveNow() {
+  if (!pendingSaveData) return;
+
+  const note = document.getElementById("quickNote").value.trim();
+  const history = getHistory();
+
+  const entry = {
+    id: Date.now(),
+    savedAt: new Date().toLocaleString('vi-VN'),
+    note: note,
+    params: {
+      startDate: document.getElementById("start").value,
+      startShift: document.getElementById("shift1").value,
+      endDate: document.getElementById("end").value,
+      endShift: document.getElementById("shift2").value,
+      line: document.getElementById("line").value
+    },
+    data: pendingSaveData
+  };
+
+  history.unshift(entry);
+  saveHistory(history);
+
+  pendingSaveData = null;
+  document.getElementById("saveAction").style.display = "none";
+  document.getElementById("quickNote").value = "";
+
+  renderHistory();
+}
+
+function skipSave() {
+  pendingSaveData = null;
+  document.getElementById("saveAction").style.display = "none";
+}
+    
     function deleteHistoryEntry(id) {
       var history = getHistory().filter(function(e){ return e.id !== id; });
       saveHistory(history);
@@ -951,8 +990,8 @@
         rows += '<tr>' +
           '<td class="col-time">' + e.savedAt + '</td>' +
           '<td class="col-line">' + e.params.line + '</td>' +
-          '<td>' + e.params.startDate + ' <b>' + e.params.startShift + '</b></td>' +
-          '<td>' + e.params.endDate + ' <b>' + e.params.endShift + '</b></td>' +
+          '<td>' + formatDateDisplay(e.params.startDate, e.params.startShift) + '</td>' +
+          '<td>' + formatDateDisplay(e.params.endDate, e.params.endShift) + '</td>' +
           '<td>' + (e.note || '<span style="color:var(--muted);font-style:italic;">—</span>') + '</td>' +
           '<td>' + formatNumber(d.material) + '</td>' +
           '<td>' + formatNumber(d.input) + '</td>' +
