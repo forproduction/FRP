@@ -1,17 +1,33 @@
-	<!DOCTYPE html>
-<html>
+<!DOCTYPE html>
+<html lang="vi">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>FRP AWFFD</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
+:root {
+  --bg: #0f0f10;
+  --card: #1b1b1c;
+  --muted: #9aa0a6;
+  --accent: #00ff9c;
+  --panel: #171717;
+  --border: rgba(255,255,255,0.04);
+  --danger: #ff4d4d;
+  --target: #fbbf24;
+  font-family: "Segoe UI", Roboto, Arial, sans-serif;
+}
 
-/* Màn hình khóa toàn trang */
+/* === RESET & BASE === */
+body, html { background: var(--bg); color: #fff; margin: 0; height: 100%; }
+.muted { color: var(--muted); font-size: 13px; }
+.small { font-size: 13px; color: var(--muted); }
+.text-danger { color: var(--danger) !important; font-weight: 600; }
+.text-accent { color: var(--accent); }
+
+/* === LOGIN OVERLAY === */
 #login-overlay {
-  position: fixed;
-  top: 0; left: 0; width: 100%; height: 100%;
+  position: fixed; inset: 0;
   background: var(--bg);
   display: flex; flex-direction: column;
   align-items: center; justify-content: center;
@@ -19,471 +35,893 @@
 }
 .login-box {
   background: var(--card);
-  padding: 30px;
-  border-radius: 12px;
+  padding: 30px; border-radius: 12px;
   border: 1px solid var(--border);
   text-align: center;
   box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 .login-box input {
-  background: #2c2c2e;
-  border: 1px solid var(--border);
-  color: #fff;
-  padding: 12px;
-  border-radius: 6px;
-  width: 200px;
-  text-align: center;
-  font-size: 18px;
-  margin-bottom: 15px;
-  outline: none;
+  background: #2c2c2e; border: 1px solid var(--border);
+  color: #fff; padding: 12px; border-radius: 6px;
+  width: 200px; text-align: center; font-size: 18px;
+  margin-bottom: 15px; outline: none;
 }
 .login-box input:focus { border-color: var(--accent); }
 .login-box button {
-  background: var(--accent);
-  color: #000;
-  border: none;
-  padding: 10px 25px;
-  border-radius: 6px;
-  font-weight: bold;
-  cursor: pointer;
+  background: var(--accent); color: #000;
+  border: none; padding: 10px 25px;
+  border-radius: 6px; font-weight: bold; cursor: pointer;
 }
-  
-/* =========================================
-     1. BIẾN DÙNG CHUNG VÀ CƠ BẢN
-     ========================================= */
-  :root {
-    --bg: #0f0f10;
-    --card: #1b1b1c;
-    --muted: #9aa0a6;
-    --accent: #00ff9c;
-    --panel: #171717;
-    --border: rgba(255,255,255,0.04);
-    --danger: #ff4d4d;
-    --target: #fbbf24;
-    font-family: "Segoe UI", Roboto, Arial, sans-serif;
-  }
 
-  body, html { 
-    background: var(--bg); 
-    color: #fff; 
-    margin: 0; 
-    height: 100%;
-  }
+/* === MAIN TABS === */
+.main-tabs-container {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 15px 20px;
+  display: flex; justify-content: center; gap: 15px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  margin-bottom: 20px;
+}
+.main-tab-btn {
+  background: transparent; color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.1);
+  font-size: 16px; font-weight: 600;
+  padding: 10px 24px; cursor: pointer;
+  border-radius: 8px; transition: all 0.2s; font-family: inherit;
+}
+.main-tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
+.main-tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
 
-  .muted { color: var(--muted); font-size: 13px; }
-  .text-danger { color: var(--danger) !important; font-weight: 600; }
-  .text-accent { color: var(--accent); }
-  .small { font-size: 13px; color: var(--muted); }
+/* === FRP SEARCH === */
+.search-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
+.search-wrap header { margin-bottom: 30px; }
+.search-wrap header h2 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: 1px; }
 
-  /* =========================================
-     2. CSS CHO THANH MAIN TABS
-     ========================================= */
-  .main-tabs-container {
-    background: var(--card);
-    border-bottom: 1px solid var(--border);
-    padding: 15px 20px;
-    display: flex;
-    justify-content: center;
-    gap: 15px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    margin-bottom: 20px;
-  }
-  
-  .main-tab-btn {
-    background: transparent;
-    color: var(--muted);
-    border: 1px solid rgba(255,255,255,0.1);
-    font-size: 16px;
-    font-weight: 600;
-    padding: 10px 24px;
-    cursor: pointer;
-    border-radius: 8px;
-    transition: all 0.2s;
-    font-family: inherit;
-  }
+.control-panel {
+  background: var(--card); padding: 20px; border-radius: 10px;
+  border: 1px solid var(--border);
+  display: flex; flex-wrap: wrap; gap: 15px; align-items: center;
+  margin-bottom: 25px;
+}
+.control-group { display: flex; align-items: center; gap: 8px; }
+.control-panel input[type="date"],
+.control-panel select,
+.control-panel button {
+  background: var(--bg); color: #fff; color-scheme: dark;
+  border: 1px solid rgba(255,255,255,0.2);
+  padding: 8px 12px; border-radius: 6px;
+  font-family: inherit; font-size: 14px;
+}
+#calcBtn {
+  background: var(--accent); color: #000;
+  font-weight: 700; cursor: pointer;
+  border: none; transition: opacity 0.2s;
+}
+#calcBtn:hover { opacity: 0.8; }
 
-  .main-tab-btn:hover { background: rgba(255,255,255,0.05); color: #fff; }
-  .main-tab-btn.active { background: var(--accent); color: #000; border-color: var(--accent); }
+/* === CARDS & CHARTS === */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  padding: 18px; border: 1px solid var(--border);
+  border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.card-label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
+.card-value { font-size: 24px; font-weight: 700; }
 
-  /* =========================================
-     3. CSS RIÊNG CHO FRP SEARCH
-     ========================================= */
-  .search-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; }
-  .search-wrap header { margin-bottom: 30px; text-align: left; }
-  .search-wrap header h2 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: 1px; }
+.charts-wrapper { display: flex; flex-wrap: wrap; gap: 20px; }
+.chart-box {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; padding: 15px;
+  flex: 1; min-width: 300px; height: 300px;
+  display: flex; justify-content: center; align-items: center;
+}
+canvas { max-height: 100%; max-width: 100%; }
 
-  .control-panel {
-    background: var(--card);
-    padding: 20px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    display: flex;
-    flex-wrap: wrap;
-    gap: 15px;
-    align-items: center;
-    margin-bottom: 25px;
-  }
-  .control-group { display: flex; align-items: center; gap: 8px; }
-  
-  .control-panel input[type="date"], .control-panel select, .control-panel button {
-    background: var(--bg);
-    color: #fff;
-    color-scheme: dark; 
-    border: 1px solid rgba(255,255,255,0.2);
-    padding: 8px 12px;
-    border-radius: 6px;
-    font-family: inherit;
-    font-size: 14px;
-  }
-  #calcBtn {
-    background: var(--accent);
-    color: #000;
-    font-weight: 700;
-    cursor: pointer;
-    border: none;
-    transition: 0.2s opacity;
-  }
-  #calcBtn:hover { opacity: 0.8; }
+/* === DASHBOARD 2026 === */
+.dash-wrap { max-width: 1400px; margin: 6px auto; padding: 8px; }
+.dash-wrap header { text-align: center; margin: 8px 0 26px; }
+.dash-wrap header h1 { margin: 0; font-size: 36px; letter-spacing: 1px; font-weight: 600; }
 
-  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 25px; }
-  .card { 
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-    padding: 18px; 
-    border: 1px solid var(--border); 
-    border-radius: 10px; 
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-  }
-  .card-label { font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 5px; }
-  .card-value { font-size: 24px; font-weight: 700; }
+.table-wrap {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
+  padding: 18px; border-radius: 10px;
+  border: 1px solid var(--border);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+}
 
-  .charts-wrapper { display: flex; flex-wrap: wrap; gap: 20px; }
-  .chart-box {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 15px;
-    flex: 1;
-    min-width: 300px;
-    height: 300px; 
-    display: flex;
-    justify-content: center;
-    align-items: center;
-  }
-  canvas { max-height: 100%; max-width: 100%; }
+table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #e6e6e6; }
+thead th {
+  text-align: left; padding: 12px 10px;
+  font-weight: 600; color: var(--muted); font-size: 13px;
+  background: transparent; border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+tbody td {
+  padding: 6px 8px; border-bottom: 1px dashed rgba(255,255,255,0.03);
+  font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+tbody tr.total { font-weight: 700; background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); }
+.col-month { width: 150px; color: var(--accent); font-weight: 600; }
+.col-num { text-align: right; font-variant-numeric: tabular-nums; }
 
-  /* =========================================
-     4. CSS RIÊNG CHO DASHBOARD 2026
-     ========================================= */
-  .dash-wrap { max-width: 1400px; margin: 6px auto; padding: 8px; }
-  .dash-wrap header { text-align: center; margin: 8px 0 26px; }
-  .dash-wrap header h1 { margin: 0; font-size: 36px; letter-spacing: 1px; font-weight: 600; }
+.dash-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
+.dash-tab-btn { padding: 8px 16px; border: none; border-radius: 6px; background: #2a2a2a; color: white; cursor: pointer; }
+.dash-tab-btn.active { background: var(--accent); color: black; font-weight: bold; }
 
-  .table-wrap {
-    background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent);
-    padding: 18px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.5);
-  }
+/* === HISTORY PANEL === */
+.history-section { margin-top: 30px; border-top: 1px solid rgba(255,255,255,0.07); padding-top: 20px; }
+.history-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px; flex-wrap: wrap; gap: 10px; }
+.history-title { font-size: 18px; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 8px; }
+.history-count {
+  background: var(--accent); color: #000;
+  font-size: 12px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+  min-width: 20px; text-align: center;
+}
+.history-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-  table { width: 100%; border-collapse: collapse; table-layout: fixed; color: #e6e6e6; }
-  thead th {
-    text-align: left; padding: 12px 10px; font-weight: 600; color: var(--muted);
-    font-size: 13px; background: transparent; border-bottom: 1px solid rgba(255,255,255,0.03);
-  }
-  tbody td {
-    padding: 6px 8px; border-bottom: 1px dashed rgba(255,255,255,0.03);
-    font-size: 15px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  }
-  tbody tr.total { font-weight: 700; background: linear-gradient(90deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01)); }
+/* Shared button base */
+.btn-secondary, .btn-danger-sm, .btn-export {
+  font-family: inherit; font-size: 13px; font-weight: 600;
+  cursor: pointer; border-radius: 6px; padding: 7px 14px; transition: 0.2s;
+}
+.btn-danger-sm { background: transparent; color: var(--danger); border: 1px solid rgba(255,77,77,0.3); }
+.btn-danger-sm:hover { background: rgba(255,77,77,0.1); }
+.btn-export { background: #1a3a2a; color: var(--accent); border: 1px solid rgba(0,255,156,0.3); }
+.btn-export:hover { background: #1e4a32; }
 
-  .col-month { width: 150px; color: var(--accent); font-weight: 600; }
-  .col-num { text-align: right; font-variant-numeric: tabular-nums; }
-  
-  .dash-tabs { display: flex; justify-content: center; gap: 10px; margin-bottom: 15px; }
-  .dash-tab-btn { padding: 8px 16px; border: none; border-radius: 6px; background: #2a2a2a; color: white; cursor: pointer; }
-  .dash-tab-btn.active { background: #00ff9c; color: black; font-weight: bold; }
+.history-table-wrap {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: 10px; overflow-x: auto;
+}
+.history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.history-table thead th {
+  background: rgba(255,255,255,0.03); padding: 10px 12px;
+  text-align: left; font-size: 12px; color: var(--muted);
+  font-weight: 600; border-bottom: 1px solid rgba(255,255,255,0.06);
+  white-space: nowrap;
+}
+.history-table tbody td {
+  padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.03);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+  overflow: visible; text-overflow: clip; color: #e0e0e0; font-size: 13px;
+}
+.history-table tbody tr:last-child td { border-bottom: none; }
+.history-table tbody tr:hover { background: rgba(255,255,255,0.02); }
+.history-table .col-time { color: var(--muted); font-size: 12px; }
+.history-table .col-line { color: var(--accent); font-weight: 700; font-size: 12px; }
+.history-table .val-danger { color: var(--danger); font-weight: 600; }
+.history-table .val-accent { color: var(--accent); font-weight: 600; }
+.history-table .btn-load-row {
+  background: transparent; color: var(--accent);
+  border: 1px solid rgba(0,255,156,0.2);
+  padding: 3px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: 0.2s;
+}
+.history-table .btn-load-row:hover { background: rgba(0,255,156,0.1); }
+.history-table .btn-del-row {
+  background: transparent; color: var(--muted); border: none;
+  padding: 3px 6px; border-radius: 4px; font-size: 14px; cursor: pointer; transition: 0.2s;
+}
+.history-table .btn-del-row:hover { color: var(--danger); }
+.history-empty { text-align: center; padding: 30px; color: var(--muted); font-size: 14px; }
 
-  /* =========================================
-     5. CSS CHO HISTORY PANEL
-     ========================================= */
-  .history-section {
-    margin-top: 30px;
-    border-top: 1px solid rgba(255,255,255,0.07);
-    padding-top: 20px;
-  }
-  .history-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 15px;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-  .history-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .history-count {
-    background: var(--accent);
-    color: #000;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 2px 8px;
-    border-radius: 20px;
-    min-width: 20px;
-    text-align: center;
-  }
-  .history-actions {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .btn-secondary, .btn-danger-sm, .btn-export {
-    font-family: inherit; font-size: 13px; font-weight: 600; cursor: pointer; border-radius: 6px; padding: 7px 14px; transition: 0.2s;
-  }
-  .btn-danger-sm { background: transparent; color: var(--danger); border: 1px solid rgba(255,77,77,0.3); }
-  .btn-danger-sm:hover { background: rgba(255,77,77,0.1); }
-  .btn-export { background: #1a3a2a; color: var(--accent); border: 1px solid rgba(0,255,156,0.3); }
-  .btn-export:hover { background: #1e4a32; }
+/* === SAVE DIALOG === */
+.save-overlay {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7); z-index: 1000;
+  justify-content: center; align-items: center;
+}
+.save-overlay.show { display: flex; }
+.save-dialog {
+  background: #1e1e1f; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 14px; padding: 28px 32px;
+  min-width: 320px; max-width: 420px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+}
+.save-dialog h3 { margin: 0 0 8px; font-size: 18px; }
+.save-dialog p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
+.save-dialog input[type="text"] {
+  width: 100%; background: var(--bg);
+  border: 1px solid rgba(255,255,255,0.2); color: #fff;
+  padding: 9px 12px; border-radius: 6px; font-size: 14px;
+  margin-bottom: 18px; box-sizing: border-box;
+}
+.save-dialog input[type="text"]:focus { outline: none; border-color: var(--accent); }
+.save-dialog-btns { display: flex; gap: 10px; justify-content: flex-end; }
+.btn-save-confirm {
+  background: var(--accent); color: #000; border: none;
+  padding: 9px 20px; border-radius: 6px; font-weight: 700; cursor: pointer;
+}
+.btn-save-confirm:hover { opacity: 0.85; }
+.btn-save-skip {
+  background: transparent; color: var(--muted);
+  border: 1px solid rgba(255,255,255,0.12);
+  padding: 9px 20px; border-radius: 6px; cursor: pointer;
+}
+.btn-save-skip:hover { color: #fff; }
 
-  .history-table-wrap {
-    background: var(--card);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    overflow-x: auto; /* Cho phép lướt ngang nếu màn hình nhỏ */
-  }
-  .history-table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 13px;
-  }
-  .history-table thead th {
-    background: rgba(255,255,255,0.03);
-    padding: 10px 12px;
-    text-align: left;
-    font-size: 12px;
-    color: var(--muted);
-    font-weight: 600;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
-    white-space: nowrap;
-  }
-  
-  /* Tắt 3 chấm */
-  .history-table tbody td {
-    padding: 9px 12px;
-    border-bottom: 1px solid rgba(255,255,255,0.03);
-    font-variant-numeric: tabular-nums;
-    white-space: nowrap;
-    overflow: visible; /* Không ẩn nội dung */
-    text-overflow: clip; /* Tắt chế độ 3 chấm */
-    color: #e0e0e0;
-    font-size: 13px;
-  }
-  
-  .history-table tbody tr:last-child td { border-bottom: none; }
-  .history-table tbody tr:hover { background: rgba(255,255,255,0.02); }
-  .history-table .col-time { color: var(--muted); font-size: 12px; }
-  .history-table .col-line { color: var(--accent); font-weight: 700; font-size: 12px; }
-  .history-table .val-danger { color: var(--danger); font-weight: 600; }
-  .history-table .val-accent { color: var(--accent); font-weight: 600; }
-  
-  .history-table .btn-load-row {
-    background: transparent; color: var(--accent); border: 1px solid rgba(0,255,156,0.2);
-    padding: 3px 10px; border-radius: 4px; font-size: 12px; cursor: pointer; transition: 0.2s;
-  }
-  .history-table .btn-load-row:hover { background: rgba(0,255,156,0.1); }
-  .history-table .btn-del-row {
-    background: transparent; color: var(--muted); border: none; padding: 3px 6px;
-    border-radius: 4px; font-size: 14px; cursor: pointer; transition: 0.2s;
-  }
-  .history-table .btn-del-row:hover { color: var(--danger); }
-  .history-empty { text-align: center; padding: 30px; color: var(--muted); font-size: 14px; }
-
-  /* Save dialog overlay */
-  .save-overlay {
-    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;
-  }
-  .save-overlay.show { display: flex; }
-  .save-dialog {
-    background: #1e1e1f; border: 1px solid rgba(255,255,255,0.1); border-radius: 14px;
-    padding: 28px 32px; min-width: 320px; max-width: 420px; box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-  }
-  .save-dialog h3 { margin: 0 0 8px; font-size: 18px; }
-  .save-dialog p { margin: 0 0 20px; color: var(--muted); font-size: 14px; }
-  .save-dialog input[type="text"] {
-    width: 100%; background: var(--bg); border: 1px solid rgba(255,255,255,0.2); color: #fff;
-    padding: 9px 12px; border-radius: 6px; font-size: 14px; margin-bottom: 18px; box-sizing: border-box;
-  }
-  .save-dialog input[type="text"]:focus { outline: none; border-color: var(--accent); }
-  .save-dialog-btns { display: flex; gap: 10px; justify-content: flex-end; }
-  .btn-save-confirm { background: var(--accent); color: #000; border: none; padding: 9px 20px; border-radius: 6px; font-weight: 700; cursor: pointer; }
-  .btn-save-confirm:hover { opacity: 0.85; }
-  .btn-save-skip { background: transparent; color: var(--muted); border: 1px solid rgba(255,255,255,0.12); padding: 9px 20px; border-radius: 6px; cursor: pointer; }
-  .btn-save-skip:hover { color: #fff; }
-
-  @media(max-width:900px){
-    .dash-wrap { padding: 8px; }
-    .dash-wrap header h1 { font-size: 28px; }
-    table { font-size: 13px; }
-    .col-month { width: 120px; }
-    .main-tabs-container { flex-direction: column; padding: 10px; }
-  }
-  
-  /* CSS mới để ẩn các nút chuyển tab chính */
-  .admin-only-flex { display: flex !important; }
-  .user-limited { display: none !important; }
-
+/* === RESPONSIVE === */
+@media (max-width: 900px) {
+  .dash-wrap { padding: 8px; }
+  .dash-wrap header h1 { font-size: 28px; }
+  table { font-size: 13px; }
+  .col-month { width: 120px; }
+  .main-tabs-container { flex-direction: column; padding: 10px; }
+}
 </style>
 </head>
-
 <body>
 
-
+<!-- LOGIN OVERLAY -->
 <div id="login-overlay">
   <div class="login-box">
-    <h2 style="color: var(--accent); margin-top: 0;">FRP SYSTEM LOGIN</h2>
+    <h2 style="color:var(--accent);margin-top:0;">FRP SYSTEM LOGIN</h2>
     <p class="muted">Vui lòng nhập mật khẩu truy cập</p>
-    <input type="password" id="pass-input" placeholder="****" onkeydown="if(event.key==='Enter') checkLogin()">
+    <input type="password" id="pass-input" placeholder="****" onkeydown="if(event.key==='Enter')checkLogin()">
     <br>
     <button onclick="checkLogin()">TRUY CẬP</button>
-    <p id="login-error" style="color: var(--danger); font-size: 12px; margin-top: 10px; display: none;">Sai mật khẩu!</p>
+    <p id="login-error" style="color:var(--danger);font-size:12px;margin-top:10px;display:none;">Sai mật khẩu, pass tham khảo 4101 (valid 10.04.2026)!</p>
   </div>
 </div>
 
-  <div class="main-tabs-container" id="main-nav-bar" style="display: none;">
-    <button class="main-tab-btn active" onclick="switchMainTab('view-dashboard', this)">📊 Dashboard 2026</button>
-    <button class="main-tab-btn" onclick="switchMainTab('view-search', this)">🔍 FRP Search</button>
-  </div>
+<!-- MAIN NAV -->
+<div class="main-tabs-container" id="main-nav-bar" style="display:none;">
+  <button class="main-tab-btn active" onclick="switchMainTab('view-dashboard',this)">📊 Dashboard 2026</button>
+  <button class="main-tab-btn" onclick="switchMainTab('view-search',this)">🔍 FRP Search</button>
+</div>
 
-  <div id="view-dashboard" style="display: block;">
-    <div class="dash-wrap">
-      <header>
-        <h1>FRP Dashboard 2026</h1>
-         <div id="last-update" class="small muted"></div>
-         <div id="data-source" class="small muted"></div>
-      </header>
+<!-- DASHBOARD VIEW -->
+<div id="view-dashboard">
+  <div class="dash-wrap">
+    <header>
+      <h1>FRP Dashboard 2026</h1>
+      <div id="last-update" class="small muted"></div>
+      <div id="data-source" class="small muted"></div>
+    </header>
 
-      <div class="dash-tabs">
-        <button class="dash-tab-btn active" onclick="switchTab('total',event)">TOTAL</button>
-        <button class="dash-tab-btn" onclick="switchTab('v05',event)">V05</button>
-        <button class="dash-tab-btn" onclick="switchTab('v0302',event)">V03-02</button>
-      </div>
-      
-      <div style="text-align:right;margin-bottom:10px; padding-right:10px;">
-        <button onclick="clearCache()" class="admin-only" style="padding:6px 12px;border-radius:6px;border:none;background:#00ff9c;color:#000;font-weight:600;cursor:pointer; display: none;">
-          Refresh Data
-        </button>
-      </div>
-      
-      <div class="table-wrap">
-        <table id="table-total">
-          <thead>
-            <tr>
-              <th class="col-month">Month</th><th>Total Q</th><th>Total UQ</th><th>Total Product</th><th>A grade</th><th>Total Waste</th><th>Waste %</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-total"></tbody>
-        </table>
-
-        <table id="table-v05" style="display:none">
-          <thead>
-            <tr>
-              <th class="col-month">Month</th><th>Qualified</th><th>Unqualified</th><th>Total Product</th><th>A grade</th><th>Waste Kg</th><th>Waste %</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-v05"></tbody>
-        </table>
-
-        <table id="table-v0302" style="display:none">
-          <thead>
-            <tr>
-              <th class="col-month">Month</th><th>Qualified</th><th>Unqualified</th><th>Total Product</th><th>A grade</th><th>Waste Kg</th><th>Waste %</th>
-            </tr>
-          </thead>
-          <tbody id="tbody-v0302"></tbody>
-        </table>
-      </div>
-
-      <div class="charts-wrapper" id="dashChartsContainer" style="display: none; margin-top: 25px;">
-        <div class="chart-box"><canvas id="dashLineChart1"></canvas></div>
-        <div class="chart-box"><canvas id="dashLineChart2"></canvas></div>
-      </div>
-
-      <div style="height:20px;"></div>
-      <div class="small muted">https://docs.google.com/spreadsheets/d/1p9do1QOMB4p_32z-EMHdqMhl5RKz22WcAqLwAntX9Eo/edit?usp=sharing</div>
+    <div class="dash-tabs">
+      <button class="dash-tab-btn active" onclick="switchDashTab('total',event)">TOTAL</button>
+      <button class="dash-tab-btn" onclick="switchDashTab('v05',event)">V05</button>
+      <button class="dash-tab-btn" onclick="switchDashTab('v0302',event)">V03-02</button>
     </div>
+
+    <div style="text-align:right;margin-bottom:10px;padding-right:10px;">
+      <button onclick="clearCache()" class="admin-only" style="display:none;padding:6px 12px;border-radius:6px;border:none;background:var(--accent);color:#000;font-weight:600;cursor:pointer;">
+        Refresh Data
+      </button>
+    </div>
+
+    <div class="table-wrap">
+      <table id="table-total">
+        <thead><tr>
+          <th class="col-month">Month</th><th>Total Q</th><th>Total UQ</th>
+          <th>Total Product</th><th>A grade</th><th>Total Waste</th><th>Waste %</th>
+        </tr></thead>
+        <tbody id="tbody-total"></tbody>
+      </table>
+      <table id="table-v05" style="display:none">
+        <thead><tr>
+          <th class="col-month">Month</th><th>Qualified</th><th>Unqualified</th>
+          <th>Total Product</th><th>A grade</th><th>Waste Kg</th><th>Waste %</th>
+        </tr></thead>
+        <tbody id="tbody-v05"></tbody>
+      </table>
+      <table id="table-v0302" style="display:none">
+        <thead><tr>
+          <th class="col-month">Month</th><th>Qualified</th><th>Unqualified</th>
+          <th>Total Product</th><th>A grade</th><th>Waste Kg</th><th>Waste %</th>
+        </tr></thead>
+        <tbody id="tbody-v0302"></tbody>
+      </table>
+    </div>
+
+    <div class="charts-wrapper" id="dashChartsContainer" style="display:none;margin-top:25px;">
+      <div class="chart-box"><canvas id="dashLineChart1"></canvas></div>
+      <div class="chart-box"><canvas id="dashLineChart2"></canvas></div>
+    </div>
+
+    <div style="height:20px;"></div>
+    <div class="small muted">https://docs.google.com/spreadsheets/d/1p9do1QOMB4p_32z-EMHdqMhl5RKz22WcAqLwAntX9Eo/edit?usp=sharing</div>
   </div>
+</div>
 
-  <div id="view-search" style="display: none;">
-    <div class="search-wrap">
-      <header>
-        <h2>FRP Search</h2>
-      </header>
+<!-- SEARCH VIEW -->
+<div id="view-search" style="display:none;">
+  <div class="search-wrap">
+    <header><h2>FRP Search</h2></header>
 
-      <div class="control-panel">
-        <div class="control-group">
-          <span class="muted">Start:</span>
-          <input type="date" id="start">
-        <select id="shift1"><option value="A">A</option> <option value="B">B</option></select>
-        </div>
-        <div class="control-group">
-          <span class="muted">End:</span>
-          <input type="date" id="end">
-         <select id="shift2"><option value="A">A</option> <option value="B">B</option></select>
-        </div>
-        <div class="control-group">
-          <span class="muted">Line:</span>
-          <select id="line">
-            <option value="STA">STA</option>
-            <option value="NGR">NGR</option>
-          </select>
-        </div>
-        <button onclick="send()" id="calcBtn">Calculate Data</button>
+    <div class="control-panel">
+      <div class="control-group">
+        <span class="muted">Start:</span>
+        <input type="date" id="start">
+        <select id="shift1"><option value="A">A</option><option value="B">B</option></select>
       </div>
-
-      <div id="output" class="grid"></div>
-      
-      <div id="saveAction" style="display:none; margin-bottom:20px;">
-        <input type="text" id="quickNote" placeholder="Note (optional...)" 
-          style="padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#111;color:#fff;">
-        
-        <button onclick="saveNow()" class="btn-save-confirm">Save</button>
-        <button onclick="skipSave()" class="btn-save-skip">Skip</button>
+      <div class="control-group">
+        <span class="muted">End:</span>
+        <input type="date" id="end">
+        <select id="shift2"><option value="A">A</option><option value="B">B</option></select>
       </div>
-      
-      <div class="charts-wrapper" id="chartsContainer" style="display: none;">
-        <div class="chart-box"><canvas id="pieChart"></canvas></div>
-        <div class="chart-box"><canvas id="barChart"></canvas></div>
+      <div class="control-group">
+        <span class="muted">Line:</span>
+        <select id="line">
+          <option value="STA">STA</option>
+          <option value="NGR">NGR</option>
+        </select>
       </div>
+      <button onclick="send()" id="calcBtn">Calculate Data</button>
+    </div>
 
-      <div class="history-section">
-        <div class="history-header">
-          <div class="history-title">
-            📋 Search History
-            <span class="history-count" id="historyCount">0</span>
-          </div>
-          <div class="history-actions admin-only" style="display: none;">
-            <button class="btn-export" onclick="exportExcel()">⬇ Export Excel</button>
-            <button class="btn-danger-sm" onclick="clearAllHistory()">🗑 Clear All</button>
-          </div>
+    <div id="output" class="grid"></div>
+
+    <div id="saveAction" style="display:none;margin-bottom:20px;">
+      <input type="text" id="quickNote" placeholder="Note (optional...)"
+        style="padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.2);background:#111;color:#fff;">
+      <button onclick="saveNow()" class="btn-save-confirm">Save</button>
+      <button onclick="skipSave()" class="btn-save-skip">Skip</button>
+    </div>
+
+    <div class="charts-wrapper" id="chartsContainer" style="display:none;">
+      <div class="chart-box"><canvas id="pieChart"></canvas></div>
+      <div class="chart-box"><canvas id="barChart"></canvas></div>
+    </div>
+
+    <div class="history-section">
+      <div class="history-header">
+        <div class="history-title">
+          📋 Search History
+          <span class="history-count" id="historyCount">0</span>
         </div>
-        <div class="history-table-wrap">
-          <div id="historyTableContainer">
-            <div class="history-empty">No search history yet. Search and save results to see them here.</div>
-          </div>
+        <div class="history-actions admin-only" style="display:none;">
+          <button class="btn-export" onclick="exportExcel()">⬇ Export Excel</button>
+          <button class="btn-danger-sm" onclick="clearAllHistory()">🗑 Clear All</button>
+        </div>
+      </div>
+      <div class="history-table-wrap">
+        <div id="historyTableContainer">
+          <div class="history-empty">No search history yet. Search and save results to see them here.</div>
         </div>
       </div>
     </div>
   </div>
+</div>
 
-  <script>
+<script>
+// =========================================
+// LOGIN
+// =========================================
+function checkLogin() {
+  const pass = document.getElementById('pass-input').value;
+  const overlay = document.getElementById('login-overlay');
+  const error = document.getElementById('login-error');
+  const adminEls = document.querySelectorAll('.admin-only');
 
-let vmr=typeof globalThis!=='undefined'?globalThis:typeof window!=='undefined'?window:global,vmL=Object['defineProperty'],vml=Object['create'],vmU=Object['getOwnPropertyDescriptor'],vmu=Object['getOwnPropertyNames'],vmt=Object['getOwnPropertySymbols'],vmD=Object['setPrototypeOf'],vmp=Object['getPrototypeOf'],vmv=Function['prototype']['call'],vmn=Function['prototype']['apply'],vmw_6b57e6=vmr['vmw_6b57e6']||(vmr['vmw_6b57e6']={});const vmH_a7f194=(function(){let C=['AREAAQACAMSbutIGCApzdHlsZQgKYmxvY2sIDmRpc3BsYXkKBAAEAAQBBAIAEIwBAI4BcA==','AREAAQACAPo7B6kGCApzdHlsZQgIbm9uZQgOZGlzcGxheQoEAAQABAEEAgAQjAEAjgFw','ARAIAQAACgeMj380CBBkb2N1bWVudAgcZ2V0RWxlbWVudEJ5SWQIFHBhc3MtaW5wdXQEAQgKdmFsdWUIGmxvZ2luLW92ZXJsYXkIFmxvZ2luLWVycm9yCBhtYWluLW5hdi1iYXIIIHF1ZXJ5U2VsZWN0b3JBbGwIFi5hZG1pbi1vbmx5CAg0MTAxCCpXZWxjb21lIEJhY2sgTmhhdCBWYW4ICmFsZXJ0CApzdHlsZQgIbm9uZQgOZGlzcGxheQgIZmxleAgOZm9yRWFjaAQACAg2ODQwCDJUcnV5IGPhuq1wIERhc2hib2FyZCAyMDI2CBZ2aWV3LXNlYXJjaAgcdmlldy1kYXNoYm9hcmQICmJsb2NrBAEIAKgCBAAABAEEAgAABAMEAQQEBAAEAAAEAQQFAAAEAwQBBAEEAAAEAQQGAAAEAwQBBAIEAAAEAQQHAAAEAwQBBAMEAAAECAQJAAAEAwQBBAQEAAQKAAAECwQMBAMEAQAEAQQNBA4EDwAEAwQNBBAEDwAEBAAEEQQSAAAABAMEAQAABAAEEwAABBQEDAQDBAEABAEEDQQOBA8ABAMEDQQOBA8ABAAABAEEFQAABAMEAQQNBA4EDwAEAAAEAQQWAAAEAwQBBA0EFwQPAAQEAAQRBBgAAAAEAwQBAAAEAgQNBBcEDwAEAAAEAQQCAAAEAwQBBBkEBAAAAJYBCIwBADY2AG6MAQ6WAQiMAQA2NgBuDpYBCIwBADY2AG4OlgEIjAEANjYAbg6WAQiMAQA2NgBuDgwAVGgAlgEAbAYMjAEAjgEGDIwBAI4BBgwIjAEAyAE2NgBuBmQMAFRoAJYBAGwGDIwBAI4BBgyMAQCOAQaWAQiMAQA2NgBujAEAjgEGlgEIjAEANjYAbowBAI4BBgwIjAEAyAE2NgBuBmQMjAEAjgEGlgEIjAEANjYAbgCOAQYCcAhimAGWAaQCngGEAoICpAI=','AREAAQACAJAFX9cICBJjbGFzc0xpc3QIDHJlbW92ZQgMYWN0aXZlBAEUBAAQBACMAQAIBAGMAQQCAAA2ADYEAwAEAW4AcA==','ARAAAQAEAJOMCwcgCBBkb2N1bWVudAgcZ2V0RWxlbWVudEJ5SWQIFnZpZXctc2VhcmNoBAEICnN0eWxlCAhub25lCA5kaXNwbGF5CBx2aWV3LWRhc2hib2FyZAgKYmxvY2sIIHF1ZXJ5U2VsZWN0b3JBbGwIGi5tYWluLXRhYi1idG4IDmZvckVhY2gEAwgSY2xhc3NMaXN0CAZhZGQIDGFjdGl2ZYIBBAAABAEEAgAABAMEAQQEBAUEBgAEAAAEAQQHAAAEAwQBBAQEBQQGAAQAAAQBBAAAAAQDBAEEBAQIBAYABAAABAkECgAABAMEAQAECwQMAAAABAMEAQAEAQQNAAQOBA8AAAQDBAEAAACWAQiMAQA2NgBujAEAjgEGlgEIjAEANjYAbowBAI4BBpYBCIwBEDY2AG6MAQCOAQaWAQiMAQA2NgBuCIwBAMgBNjYAbgYQjAEIjAEANjYAbgYCcA==','ARAIAQACAqjs+eYUCBJ1bmRlZmluZWQIAAgCLQgMTnVtYmVyBAEICmlzTmFOCBx0b0xvY2FsZVN0cmluZwgKZW4tVVMEAggqbWF4aW11bUZyYWN0aW9uRGlnaXRzWgQAEAQAlgEAVAAIAGYABgQAEAAEAFQACABmAAYEABAEAQAAVABoBAIAAHAEABAEA5YBBAQABAFsBAEOBAEMBAWWAQQEAAQBbABoBAAQAHAEAQwACAQGjAEEBwAANgA2AJoBAAgECAAECaYBADYANgQIAAQCbgBwCAgSFB4eJDY8','ARAIAQACAonHWggaCBJ1bmRlZmluZWQIAAgCLQgMTnVtYmVyBAEICmlzTmFOBGQIHHRvTG9jYWxlU3RyaW5nCAplbi1VUwQCCCptaW5pbXVtRnJhY3Rpb25EaWdpdHMIKm1heGltdW1GcmFjdGlvbkRpZ2l0cwgCJWgEABAEAJYBAFQACABmAAYEABAABABUAAgAZgAGBAAQBAEAAFQAaAQCAABwBAAQBAOWAQQEAAQBbAQBDgQBDAQFlgEEBAAEAWwAaAQAEABwBAEMBAYAABgACAQHjAEECAAANgA2AJoBAAgECQAECqYBAAgECQAEC6YBADYANgQJAAQCbgQMAAAUAHAICBIUHh4kNjw=','ARAIAQACAqgs24gYCBJ1bmRlZmluZWQIAAgCLQgMTnVtYmVyBAEICmlzTmFOCAhNYXRoCApyb3VuZARkCBx0b0xvY2FsZVN0cmluZwgKZW4tVVMIAiVkEAQAlgEEAFQACABmAAYAEAQABABUAAgAZgAGABAEAAAEAVQAaAAABAJwABAEAJYBBAMABARsBAEOBAEMBAGWAQQFAAQEbAQBaAAQBABwAJYBBAYIAIwBBAcMBAEABAgYADYANgAABARuBAEIAIwBBAkABAo2ADYAAAQEbgQBAAQLFABwAAgIEhQeHiQ2PA==','ARAIAQAECAKLuJgcCAItCAhEYXRlBAEIDmdldERhdGUEAAgMU3RyaW5nCBBwYWRTdGFydAQCCAIwCBBnZXRNb250aAgWZ2V0RnVsbFllYXIIAAh+PGJyPjxzcGFuIHN0eWxlPSJmb250LXNpemU6IDExcHg7IGNvbG9yOiB2YXIoLS1tdXRlZCk7Ij5TaGlmdDogCA48L3NwYW4+nAEQQGgAcJYBEADQAQ4MCIwBAG6WAQBsCIwBADY2ADY2AG4ODAiMAQBuABSWAQBsCIwBADY2ADY2AG4ODAiMAQBuDgAMOhQAFAw6FAAUDDoUABQQOhQAFHAEAAAABAAABAEEAAQCBAEEAgQCAAQDBAQEAAQFBAIEAQAEBgQHAAAECAAABAcEAgQDBAIABAkEBAQABAIABAUEAgQBAAQGBAcAAAQIAAAEBwQCBAQEAgAECgQEBAAEBQQLBAMAAAQAAAQEAAAEAAAEBQAABAwABAEAAAQNAAACBAo=','ARAAAQAAAuvLHy8WCAhEYXRlBAAIDmdldERhdGUIDFN0cmluZwQBCBBwYWRTdGFydAQCCAIwCAItCBBnZXRNb250aAgWZ2V0RnVsbFllYXJslgEA0AEODAiMAQBulgEAbAiMAQA2NgA2NgBuABQMCIwBAG4AFJYBAGwIjAEANjYANjYAbhQAFAwIjAEAbhRwBAAEAQQABAAEAAAEAgQBBAAEAwQEBAEABAUEBgAABAcAAAQGBAIECAAEAAAECQQBBAAEBAAEAwQEBAEABAUEBgAABAcAAAQGBAIABAgABAAABAoEAQQAAAA=','ARIYAQAABtaS4NBSCBBkb2N1bWVudAgcZ2V0RWxlbWVudEJ5SWQIDmNhbGNCdG4EAQgUTG9hZGluZy4uLggSaW5uZXJUZXh0AwgQZGlzYWJsZWQIDkFQSV9VUkwICFBPU1QIDG1ldGhvZAgISlNPTggSc3RyaW5naWZ5CApzdGFydAgKdmFsdWUIEnN0YXJ0RGF0ZQgMc2hpZnQxCBRzdGFydFNoaWZ0CAZlbmQIDmVuZERhdGUIDHNoaWZ0MggQZW5kU2hpZnQICGxpbmUICGJvZHkICmZldGNoBAIICGpzb24EAAgMcmVuZGVyCB5wZW5kaW5nU2F2ZURhdGEIFHNhdmVBY3Rpb24ICnN0eWxlCApibG9jawgOZGlzcGxheQgYXzB4MjM4ZTJjJCQxCChFcnJvciBmZXRjaGluZyBkYXRhIQgKYWxlcnQIDmNvbnNvbGUICmVycm9yCBxDYWxjdWxhdGUgRGF0YQK0ApYBCIwBADY2AG4ODACOAQYMAI4BBnSmA5oBCACmAQiWAQiMAZoBCJYBCIwBADY2AG6MAaYBCJYBCIwBADY2AG6MAaYBCJYBCIwBADY2AG6MAaYBCJYBCIwBADY2AG6MAaYBCJYBCIwBADY2AG6MAaYBNjYAbqYBlgEAbPQBDgwIjAEAbvQBDgymAwBsBgwIqAMGlgEIjAEANjYAbowBAI4BBnZkqgOkA3gAlgEAbAaWAQiMAaYDNjYAbgasA2R6DACOAQYMAI4BBnwCcAQAAAQBBAIAAAQDBAEEAAQABAQEBQAEAAQGBAcAAAQIAAAECQQKAAQLAAQMAAAEAAAEAQQNAAAEAwQBBA4EDwAEAAAEAQQQAAAEAwQBBA4EEQAEAAAEAQQSAAAEAwQBBA4EEwAEAAAEAQQUAAAEAwQBBA4EFQAEAAAEAQQWAAAEAwQBBA4EFgAABAMEAQQXBBgEGQQCAAQBBAEABBoEGwQAAAQCBAIEHAQDBAEABAIABB0ABAAABAEEHgAABAMEAQQfBCAEIQAAAAQABAAEIgQjBCQEAwQBAAQlAAQmBCIAAAQDBAEABAAAAAQABCcEBQAEAAQoBAcAAAAABPQBnAKaApwCAiL4AZ4CsgI=','ARAIAQACCL5SfTFUCAxhZ3JhZGUIDE51bWJlcgQBBGQIGHdhc3RlUGVyY2VudARjCBZ0ZXh0LWRhbmdlcggWdGV4dC1hY2NlbnQHMzMzMzMzFUAIEGRvY3VtZW50CBxnZXRFbGVtZW50QnlJZAgMb3V0cHV0CLwBCiAgICAgICAgPGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBjbGFzcz0iY2FyZC1sYWJlbCI+TWF0ZXJpYWwgKGtnKTwvZGl2PjxkaXYgY2xhc3M9ImNhcmQtdmFsdWUiPggQbWF0ZXJpYWwIGGZvcm1hdE51bWJlcgjWATwvZGl2PjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9ImNhcmQiPjxkaXYgY2xhc3M9ImNhcmQtbGFiZWwiPkFkZGl0aXZlcyAoa2cpPC9kaXY+PGRpdiBjbGFzcz0iY2FyZC12YWx1ZSI+CBJhZGRpdGl2ZXMIzgE8L2Rpdj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJjYXJkIj48ZGl2IGNsYXNzPSJjYXJkLWxhYmVsIj5JbnB1dCAoa2cpPC9kaXY+PGRpdiBjbGFzcz0iY2FyZC12YWx1ZSI+CAppbnB1dAjsATwvZGl2PjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9ImNhcmQiPjxkaXYgY2xhc3M9ImNhcmQtbGFiZWwiPlEgKFF1YWxpZmllZCk8L2Rpdj48ZGl2IGNsYXNzPSJjYXJkLXZhbHVlIHRleHQtYWNjZW50Ij4IAnEI8gE8L2Rpdj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJjYXJkIj48ZGl2IGNsYXNzPSJjYXJkLWxhYmVsIj5VUSAoVW5xdWFsaWZpZWQpPC9kaXY+PGRpdiBjbGFzcz0iY2FyZC12YWx1ZSB0ZXh0LWRhbmdlciI+CAR1cQjmATwvZGl2PjwvZGl2PgogICAgICAgIDxkaXYgY2xhc3M9ImNhcmQiPjxkaXYgY2xhc3M9ImNhcmQtbGFiZWwiPldhc3RlIChrZyk8L2Rpdj48ZGl2IGNsYXNzPSJjYXJkLXZhbHVlIHRleHQtZGFuZ2VyIj4ICndhc3RlCNwBPC9kaXY+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBjbGFzcz0iY2FyZC1sYWJlbCI+VGhyb3VnaHB1dCAoa2cvaCk8L2Rpdj48ZGl2IGNsYXNzPSJjYXJkLXZhbHVlIj4IFHRocm91Z2hwdXQIxgE8L2Rpdj48L2Rpdj4KICAgICAgICA8ZGl2IGNsYXNzPSJjYXJkIj48ZGl2IGNsYXNzPSJjYXJkLWxhYmVsIj5BLWdyYWRlPC9kaXY+PGRpdiBjbGFzcz0iY2FyZC12YWx1ZSAIBCI+CCBmb3JtYXRQZXJjZW50SW50CMYBPC9kaXY+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBjbGFzcz0iY2FyZC1sYWJlbCI+V2FzdGUgJTwvZGl2PjxkaXYgY2xhc3M9ImNhcmQtdmFsdWUgCBpmb3JtYXRQZXJjZW50CNIBPC9kaXY+PC9kaXY+CiAgICAgICAgPGRpdiBjbGFzcz0iY2FyZCI+PGRpdiBjbGFzcz0iY2FyZC1sYWJlbCI+UHJvZHVjdGl2aXR5PC9kaXY+PGRpdiBjbGFzcz0iY2FyZC12YWx1ZSI+CBhwcm9kdWN0aXZpdHkIJjwvZGl2PjwvZGl2PgogICAgICAIEmlubmVySFRNTAgeY2hhcnRzQ29udGFpbmVyCApzdHlsZQgIZmxleAgOZGlzcGxheQgUZHJhd0NoYXJ0cwQDyAIEABAEAIwBBAGWAQQCAAQBbAQDAAAYBAEOBAAQBASMAQQBlgEEAgAEAWwEAwAAGAQCDgQBDAQFAABYAGgEBgAAZAQHAAQDDgQCDAQIAABcAGgEBgAAZAQHAAQEDgQJlgEACAQKjAEECwAANgA2BAIABAFuBAwABAAQBA2MAQQOpgMEAgAEAWwAOgAUBA8AABQEABAEEIwBBA6mAwQCAAQBbAA6ABQEEQAAFAQAEAQSjAEEDqYDBAIABAFsADoAFAQTAAAUBAAQBBSMAQQOpgMEAgAEAWwAOgAUBBUAABQEABAEFowBBA6mAwQCAAQBbAA6ABQEFwAAFAQAEAQYjAEEDqYDBAIABAFsADoAFAQZAAAUBAAQBBqMAQQOpgMEAgAEAWwAOgAUBBsAABQEAwwAOgAUBBwAABQEABAEAIwBBB2mAwQCAAQBbAA6ABQEHgAAFAQEDAA6ABQEHAAAFAQAEAQEjAEEH6YDBAIABAFsADoAFAQgAAAUBAAQBCGMAQQfpgMEAgAEAWwAOgAUBCIAABQEI44BAAYECZYBAAgECowBBCQAADYANgQCAAQBbgQljAEEJgAEJ44BAAYEABAEAQwEAgwEKKYDBCkABANsAAYAAgBwCCYsKi42PDo+','ARAIAQACDlQgeXFCCAZjdHgIHGdldERhdGFzZXRNZXRhBAAEAQgMc2NhbGVzCAJ5CAhzYXZlBAIIEmxpbmVXaWR0aAgWc2V0TGluZURhc2gEBAgIZGF0YQggZ2V0UGl4ZWxGb3JWYWx1ZQRjCA4jZmJiZjI0CBZzdHJva2VTdHlsZQgSYmVnaW5QYXRoCAxtb3ZlVG8IAngICndpZHRoBAUIDGxpbmVUbwgMc3Ryb2tlCBJmaWxsU3R5bGUIFDEwcHggQXJpYWwICGZvbnQIEGZpbGxUZXh0CAY5OSUECAQDBzMzMzMzMxVACAg1LjMlCA5yZXN0b3JlggQQjAEOEAiMAQA2NgBuDhCMAYwBDgwIjAEAbgYMAI4BBgwIjAG0AQC2AQC2ATY2AG4GDIwBAJABDgxoDAiMAQA2NgBuDgwAjgEGDAiMAQBuBgwIjAEMjAEMjAEAGhYAFjY2DDY2AG4GDAiMAQyMAQyMAQAaFAAUNjYMNjYAbgYMCIwBAG4GDACOAQYMAI4BBgwIjAEANjYMjAEMjAEAGhQAFDY2DAAUNjYAbgYMjAEAkAEODGgMCIwBADY2AG4ODACOAQYMCIwBAG4GDAiMAQyMAQyMAQAaFgAWNjYMNjYAbgYMCIwBDIwBDIwBABoUABQ2Ngw2NgBuBgwIjAEAbgYMAI4BBgwAjgEGDAiMAQA2NgyMAQyMAQAaFAAUNjYMABQ2NgBuBgwIjAEAbgYCcAQABAAEAQQAAAQBBAIAAAQDBAEEAgQABAQEBQQDBAEABAYEAgQAAAQBBAcECAAEAQAECQAECgAECgAAAAQDBAEABAIECwQCAAQEBAQABAMABAwEDQAABAMEAQQFBAEEDgQPAAQBAAQQBAIEAAAEAQAEEQQEBBIEBAQTBAcAAAQUAAAABAUAAAQHBAIABAEABBUEBAQSBAQEEwQHAAAEFAAAAAQFAAAEBwQCAAQBAAQWBAIEAAAEAQQOBBcABAEEGAQZAAQBAAQaBBsAAAQEBBIEBAQTBAcAAAQcAAAABAUEHQAAAAQdBAMABAIECwQDAAQGBAYABAMABAwEHgAABAMEAQQHBAEEDgQPAAQBAAQQBAIEAAAEAQAEEQQGBBIEBgQTBAcAAAQUAAAABAcAAAQHBAIABAEABBUEBgQSBAYEEwQHAAAEFAAAAAQHAAAEBwQCAAQBAAQWBAIEAAAEAQQOBBcABAEEGAQZAAQBAAQaBB8AAAQGBBIEBgQTBAcAAAQcAAAABAcEHQAAAAQdBAMABAEABCAEAgQAAAAABFqgAqwC8gM=','ARAAAQACAA04AP4CCAIlCBAEAAAEABQAcAA=','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','ARAAAQACAGNueYcCCAIlCBAEAAAEABQAcAA=','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'],K=0x0,d=0x1,X=0x2,H=0x3,c=0x4,m=0x5,w=0x6,G=0x7,E=0x8,r=0x9,i=0xa,F=0x1,L=0x2,l=0x4,U=0x8,u=0x10,t=0x20,D=0x40,p=0x80,v=0x100,n=0x200,V=0x400,b=0x800,g=0x1000,T=0x2000,S=0x4000,j=0x8000,O=0x10000,M=0x20000,B=0x40000,N=0x80000;function I(Cj){this['_$3fffiY']=Cj,this['_$iRSYno']=new DataView(Cj['buffer'],Cj['byteOffset'],Cj['byteLength']),this['_$Tb0Nxp']=0x0;}I['prototype']['_$XMP7Rz']=function(){return this['_$3fffiY'][this['_$Tb0Nxp']++];},I['prototype']['_$uagRBz']=function(){let Cj=this['_$iRSYno']['getUint16'](this['_$Tb0Nxp'],!![]);return this['_$Tb0Nxp']+=0x2,Cj;},I['prototype']['_$2MTmtr']=function(){let Cj=this['_$iRSYno']['getUint32'](this['_$Tb0Nxp'],!![]);return this['_$Tb0Nxp']+=0x4,Cj;},I['prototype']['_$WSiGMz']=function(){let Cj=this['_$iRSYno']['getInt32'](this['_$Tb0Nxp'],!![]);return this['_$Tb0Nxp']+=0x4,Cj;},I['prototype']['_$umHfxK']=function(){let Cj=this['_$iRSYno']['getFloat64'](this['_$Tb0Nxp'],!![]);return this['_$Tb0Nxp']+=0x8,Cj;},I['prototype']['_$uVndBy']=function(){let Cj=0x0,CO=0x0,CM;do{CM=this['_$XMP7Rz'](),Cj|=(CM&0x7f)<<CO,CO+=0x7;}while(CM>=0x80);return Cj>>>0x1^-(Cj&0x1);},I['prototype']['_$8ErpOW']=function(){let Cj=this['_$uVndBy'](),CO=this['_$3fffiY']['slice'](this['_$Tb0Nxp'],this['_$Tb0Nxp']+Cj);return this['_$Tb0Nxp']+=Cj,new TextDecoder()['decode'](CO);};function o(Cj){let CO=atob(Cj),CM=new Uint8Array(CO['length']);for(let CB=0x0;CB<CO['length'];CB++){CM[CB]=CO['charCodeAt'](CB);}return CM;}function y(Cj){let CO=Cj['_$XMP7Rz']();switch(CO){case K:return null;case d:return undefined;case X:return![];case H:return!![];case c:{let CM=Cj['_$XMP7Rz']();return CM>0x7f?CM-0x100:CM;}case m:{let CB=Cj['_$uagRBz']();return CB>0x7fff?CB-0x10000:CB;}case w:return Cj['_$WSiGMz']();case G:return Cj['_$umHfxK']();case E:return Cj['_$8ErpOW']();case r:return BigInt(Cj['_$8ErpOW']());case i:{let CN=Cj['_$8ErpOW'](),CI=Cj['_$8ErpOW']();return new RegExp(CN,CI);}default:return null;}}function R(Cj){let CO=o(Cj),CM=new I(CO),CB=CM['_$XMP7Rz'](),CN=CM['_$2MTmtr'](),CI=CM['_$uVndBy'](),Co=CM['_$uVndBy'](),Cy=[];Cy[0xb]=CI,Cy[0x13]=Co;CN&U&&(Cy[0x8]=CM['_$uVndBy']());CN&u&&(Cy[0x17]=CM['_$2MTmtr']());if(CN&t){let CQ=CM['_$uVndBy'](),CA={};for(let Ca=0x0;Ca<CQ;Ca++){let CW=CM['_$uVndBy'](),CP=CM['_$uVndBy']();CA[CW]=CP;}Cy[0x5]=CA;}CN&D&&(Cy[0x0]=CM['_$2MTmtr']());CN&p&&(Cy[0x1]=CM['_$2MTmtr']());CN&v&&(Cy[0x10]=CM['_$2MTmtr']());CN&n&&(Cy[0x14]=CM['_$uVndBy']());CN&V&&(Cy[0x4]=CM['_$2MTmtr']());CN&N&&(Cy[0xe]=CM['_$uVndBy']());CN&F&&(Cy[0x15]=0x1);CN&L&&(Cy[0x6]=0x1);CN&l&&(Cy[0xa]=0x1);CN&S&&(Cy[0x12]=0x1);CN&j&&(Cy[0x16]=0x1);CN&O&&(Cy[0xf]=0x1);CN&M&&(Cy[0xd]=0x1);CN&B&&(Cy[0x7]=0x1);CN&T&&(Cy[0x11]=0x1);let CR=CM['_$uVndBy'](),CZ=new Array(CR);for(let Cs=0x0;Cs<CR;Cs++){CZ[Cs]=y(CM);}Cy[0x9]=CZ;function Ck(Cq){let Cf=Cq['_$XMP7Rz']();switch(Cf){case K:return null;case c:{let K0=Cq['_$XMP7Rz']();return K0>0x7f?K0-0x100:K0;}case m:{let K1=Cq['_$uagRBz']();return K1>0x7fff?K1-0x10000:K1;}case w:return Cq['_$WSiGMz']();case G:return Cq['_$umHfxK']();case E:return Cq['_$8ErpOW']();default:return null;}}let Cz=CM['_$uVndBy'](),CY=Cz<<0x1,CJ=new Array(CY),Ch=0x0,Cx=(CI*0x1f^Co*0x11^Cz*0xd^CR*0x7)>>>0x0&0x3;switch(Cx){case 0x1:for(let Cq=0x0;Cq<Cz;Cq++){let Cf=Ck(CM),K0=CM['_$uVndBy']();CJ[Ch++]=Cf,CJ[Ch++]=K0;}break;case 0x2:{let K1=new Array(Cz);for(let K2=0x0;K2<Cz;K2++){K1[K2]=CM['_$uVndBy']();}for(let K3=0x0;K3<Cz;K3++){CJ[Ch++]=K1[K3];}for(let K4=0x0;K4<Cz;K4++){CJ[Ch++]=Ck(CM);}break;}case 0x3:{let K5=new Array(Cz);for(let K6=0x0;K6<Cz;K6++){K5[K6]=Ck(CM);}for(let K7=0x0;K7<Cz;K7++){CJ[Ch++]=K5[K7];}for(let K8=0x0;K8<Cz;K8++){CJ[Ch++]=CM['_$uVndBy']();}break;}case 0x0:default:for(let K9=0x0;K9<Cz;K9++){CJ[Ch++]=CM['_$uVndBy'](),CJ[Ch++]=Ck(CM);}break;}Cy[0xc]=CJ;if(CN&b){let KC=CM['_$uVndBy'](),KK={};for(let Kd=0x0;Kd<KC;Kd++){let KX=CM['_$uVndBy'](),KH=CM['_$uVndBy']();KK[KX]=KH;}Cy[0x2]=KK;}if(CN&g){let Kc=CM['_$uVndBy'](),Ke={};for(let Km=0x0;Km<Kc;Km++){let Kw=CM['_$uVndBy'](),KG=CM['_$uVndBy']()-0x1,KE=CM['_$uVndBy']()-0x1,Kr=CM['_$uVndBy']()-0x1;Ke[Kw]=[KG,KE,Kr];}Cy[0x3]=Ke;}return Cy;}let Z=function(Cj){let CO=C;C=null;let CM=null,CB={};return function(CN){let CI=CM?CM[CN]:CN;if(CB[CI])return CB[CI];let Co=CO[CI];return typeof Co==='string'?CB[CI]=Cj(Co):CB[CI]=Co,CB[CI];};}(R),k={'0':0x13d,'1':0x175,'2':0xfb,'3':0x1a0,'4':0x4a,'5':0x18a,'6':0x58,'7':0x192,'8':0xe2,'9':0x18,'10':0x18f,'11':0x84,'12':0x0,'13':0x1e6,'14':0x1f0,'15':0x28,'16':0x127,'17':0x14,'18':0x19a,'19':0x142,'20':0x48,'21':0x7f,'22':0xf9,'23':0xb2,'24':0x10a,'25':0x12f,'26':0xe1,'27':0x7b,'28':0x1b8,'29':0x1a1,'32':0x7c,'40':0xb6,'41':0xe5,'42':0x1b2,'43':0x30,'44':0x10c,'45':0x15b,'46':0x17a,'47':0x18d,'50':0xb8,'51':0x2e,'52':0x1a8,'53':0x168,'54':0x131,'55':0xbb,'56':0x1a4,'57':0x108,'58':0x154,'59':0x1bc,'60':0x97,'61':0x18b,'62':0x9e,'63':0x18e,'64':0xe8,'65':0x1e5,'70':0x36,'71':0x1ff,'72':0x19c,'73':0x130,'74':0x16f,'75':0x1d7,'76':0x19f,'77':0x13f,'78':0x1ee,'79':0x18c,'80':0xd,'81':0x1d5,'82':0x1a3,'83':0x194,'84':0xde,'90':0x13,'91':0x190,'92':0x143,'93':0xc9,'94':0x133,'95':0x1cf,'100':0xef,'101':0x195,'102':0x61,'103':0x7a,'104':0x81,'105':0x1b6,'106':0x151,'107':0xc3,'110':0x1b7,'111':0xc2,'112':0x13c,'120':0xb9,'121':0x1d9,'122':0x145,'123':0xf2,'124':0x4f,'125':0x17d,'126':0x198,'127':0x4d,'128':0xa6,'129':0xd6,'130':0x1e2,'131':0x99,'132':0x5f,'140':0x1e3,'141':0x6a,'142':0x9,'143':0x83,'144':0xc5,'145':0x5,'146':0x17,'147':0x188,'148':0x45,'149':0x1a2,'150':0x166,'151':0x39,'152':0x63,'153':0x11b,'154':0x4,'155':0x46,'156':0xa2,'157':0x9b,'158':0x8c,'160':0x5b,'161':0x126,'162':0x1c6,'163':0x103,'164':0x1d6,'165':0x155,'166':0x67,'167':0x1b9,'168':0x107,'169':0x14b,'180':0x85,'181':0x116,'182':0xb1,'183':0xc6,'184':0x1da,'185':0x176,'200':0x1cb,'201':0x1de,'202':0x80,'210':0x70,'211':0xbd,'212':0x153,'213':0x76,'214':0x38,'215':0xc7,'216':0x8a,'217':0x72,'218':0x1ec,'219':0x15a,'220':0x1fa,'221':0x158,'250':0x1f7,'251':0x16e,'252':0x11,'253':0x93,'254':0x9c,'255':0x55,'256':0x1f3,'257':0xf6,'258':0x125,'259':0xc8,'260':0xcd,'261':0x132};const z={},Y=0x1,J=0x2,h=0x3,x=0x4,Q=0x78,A=0x79,a=0x7a,W=typeof 0x0n,P=Object['freeze']([]);let s=new WeakSet(),q=new WeakSet(),f=new WeakMap();function C0(Cj,CO,CM){try{vmL(Cj,CO,CM);}catch(CB){}}function C1(Cj,CO){let CM=new Array(CO),CB=![];for(let CI=CO-0x1;CI>=0x0;CI--){let Co=Cj();Co&&typeof Co==='object'&&s['has'](Co)?(CB=!![],CM[CI]=Co):CM[CI]=Co;}if(!CB)return CM;let CN=[];for(let Cy=0x0;Cy<CO;Cy++){let CR=CM[Cy];if(CR&&typeof CR==='object'&&s['has'](CR)){let CZ=CR['value'];if(Array['isArray'](CZ)){for(let Ck=0x0;Ck<CZ['length'];Ck++)CN['push'](CZ[Ck]);}}else CN['push'](CR);}return CN;}function C2(Cj){let CO=[];for(let CM in Cj){CO['push'](CM);}return CO;}function C3(Cj){return Array['prototype']['slice']['call'](Cj);}function C4(Cj){return typeof Cj==='function'&&Cj['prototype']?Cj['prototype']:Cj;}function C5(Cj){if(typeof Cj==='function')return vmp(Cj);let CO=vmp(Cj),CM=CO&&vmU(CO,'constructor'),CB=CM&&CM['value'],CN=CB&&typeof CB==='function'&&(CB['prototype']===CO||vmp(CB['prototype'])===vmp(CO));if(CN)return vmp(CO);return CO;}function C6(Cj,CO){let CM=Cj;while(CM!==null){let CB=vmU(CM,CO);if(CB)return{'desc':CB,'proto':CM};CM=vmp(CM);}return{'desc':null,'proto':Cj};}function C7(Cj,CO){if(!Cj['_$wQwr8G'])return;CO in Cj['_$wQwr8G']&&delete Cj['_$wQwr8G'][CO];let CM=CO['indexOf']('$$');if(CM!==-0x1){let CB=CO['substring'](0x0,CM);CB in Cj['_$wQwr8G']&&delete Cj['_$wQwr8G'][CB];}}function C8(Cj,CO){let CM=Cj;while(CM){C7(CM,CO),CM=CM['_$ANyjq7'];}}function C9(Cj,CO,CM,CB){if(CB){let CN=Reflect['set'](Cj,CO,CM);if(!CN)throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(CO)+'\x27\x20of\x20object');}else Reflect['set'](Cj,CO,CM);}function CC(){return!vmw_6b57e6['_$nnsOPu']&&(vmw_6b57e6['_$nnsOPu']=new Map()),vmw_6b57e6['_$nnsOPu'];}function CK(){return vmw_6b57e6['_$nnsOPu']||null;}function Cd(Cj,CO,CM){if(Cj[0x8]===undefined||!CM)return;let CB=Cj[0x9][Cj[0x8]];!CO['_$z7jO8h']&&(CO['_$z7jO8h']=vml(null)),CO['_$z7jO8h'][CB]=CM,Cj[0x11]&&(!CO['_$IlKMX6']&&(CO['_$IlKMX6']=vml(null)),CO['_$IlKMX6'][CB]=!![]),C0(CM,'name',{'value':CB,'writable':![],'enumerable':![],'configurable':!![]});}function CX(Cj){return'_$TM3jUV'+Cj['substring'](0x1)+'_$sxeiGW';}function CH(Cj){return'_$P1uVX4'+Cj['substring'](0x1)+'_$fO1r71';}function Cc(Cj,CO,CM,CB,CN,CI){let Co;return CB?Co=function Cy(){let CR=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];if(this===CN)return Cj(CO,arguments,CM,Co,CR,undefined);return Cj['call'](this,CO,arguments,CM,Co,CR,CI);}:Co=function CR(){let CZ=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];return Cj['call'](this,CO,arguments,CM,Co,CZ,CI);},f['set'](Co,{'b':CO,'e':CM}),Co;}function Ce(Cj,CO,CM,CB,CN,CI){let Co;return CB?Co=async function Cy(){let CR=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];if(this===CN)return await Cj(CO,arguments,CM,Co,CR,undefined,undefined);return await Cj['call'](this,CO,arguments,CM,Co,CR,undefined,CI);}:Co=async function CR(){let CZ=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];return await Cj['call'](this,CO,arguments,CM,Co,CZ,undefined,CI);},Co;}function Cm(Cj,CO,CM,CB,CN,CI,Co){let Cy;return CN?Cy=function CR(){if(this===CI)return Cj(CO,arguments,CM,Cy,undefined,undefined);return Cj['call'](this,CO,arguments,CM,Cy,undefined,Co);}:Cy=function CZ(){return Cj['call'](this,CO,arguments,CM,Cy,undefined,Co);},CB['add'](Cy),Cy;}function Cw(Cj,CO,CM,CB){let CN;return CN={'klWans':(...CI)=>{return Cj(CO,CI,CM,CN,undefined,CB);}}['klWans'],CN;}function CG(Cj,CO,CM,CB){let CN;return CN={'klWans':async(...CI)=>{return await Cj(CO,CI,CM,CN,undefined,undefined,CB);}}['klWans'],CN;}function CE(Cj,CO,CM,CB,CN,CI){let Co;return CB?Co={'klWans'(){let Cy=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];if(this===CN)return Cj(CO,arguments,CM,Co,Cy,undefined);return Cj['call'](this,CO,arguments,CM,Co,Cy,CI);}}['klWans']:Co={'klWans'(){let Cy=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];return Cj['call'](this,CO,arguments,CM,Co,Cy,CI);}}['klWans'],f['set'](Co,{'b':CO,'e':CM}),Co;}function Cr(Cj,CO,CM,CB,CN,CI){let Co;return CB?Co={async 'klWans'(){let Cy=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];if(this===CN)return await Cj(CO,arguments,CM,Co,Cy,undefined,undefined);return await Cj['call'](this,CO,arguments,CM,Co,Cy,undefined,CI);}}['klWans']:Co={async 'klWans'(){let Cy=new.target!==undefined?new.target:vmw_6b57e6['_$UFEh0Q'];return await Cj['call'](this,CO,arguments,CM,Co,Cy,undefined,CI);}}['klWans'],Co;}let Ci=0x10,CF=0xd,CL=0x10,Cl=0x200;function CU(Cj){let CO=(Cj^0xa5a5a5a5)>>>0x0;CO=(CO^CO>>>0x11)*0xed558359>>>0x0,CO=(CO^CO>>>0xb)*0x1b873593>>>0x0;let CM=(CO|0x10001)>>>0x0;CO=(CO^CO>>>0xd)*0xc2efb7d3>>>0x0,CO=(CO^CO>>>0xf)*0x68e31da9>>>0x0;let CB=(CO|0x10001)>>>0x0;CO=(CO^CO>>>0x10)*0x85ebca77>>>0x0,CO=(CO^CO>>>0xd)*0xcc9e2d51>>>0x0;let CN=(CO|0x1)>>>0x0;return{'m1':CM,'m2':CB,'p':CN};}function Cu(Cj,CO){return Cj=Cj>>>0x0,Cj^=Cj>>>Ci,Cj=Math['imul'](Cj,CO['m1'])>>>0x0,Cj^=Cj>>>CF,Cj=Math['imul'](Cj,CO['m2'])>>>0x0,Cj^=Cj>>>CL,Cj>>>0x0;}function Ct(Cj,CO,CM){let CB=(Cj^CO*CM['p'])>>>0x0;return CB=(CB^CB>>>0xb)>>>0x0,CB=Math['imul'](CB,0x1b873593)>>>0x0,CB=(CB^CB>>>0xf)>>>0x0,Cu(CB,CM);}function CD(Cj,CO,CM){let CB=CU(Cj),CN=Cj^CO*CB['p']>>>0x0;CN=(CN^CM*0x27d4eb2d>>>0x0)>>>0x0,CN=Cu(CN,CB);let CI=[];for(let Cy=0x0;Cy<Cl;Cy++){CI[Cy]=Cy;}for(let CR=Cl-0x1;CR>0x0;CR--){let CZ=Ct(CN,CR,CB),Ck=CZ%(CR+0x1),Cz=CI[CR];CI[CR]=CI[Ck],CI[Ck]=Cz;}let Co={};for(let CY=0x0;CY<Cl;CY++){Co[CY]=CI[CY];}return Co;}let Cp={};function Cv(Cj,CO,CM){let CB=Cj+'_'+CO+'_'+CM;return!Cp[CB]&&(Cp[CB]=CD(Cj,CO,CM)),Cp[CB];}function Cn(Cj,CO,CM,CB,CN,CI){let Co=new Array(0x8),Cy=0x0,CR=new Array((Cj[0xb]||0x0)+(Cj[0x13]||0x0)),CZ=0x0,Ck=Cj[0x9],Cz=Cj[0xc],CY=Cj[0x2]||P,CJ=Cj[0x3]||P,Ch=Cz['length']>>0x1,Cx=(Cj[0xb]*0x1f^Cj[0x13]*0x11^Ch*0xd^Ck['length']*0x7)>>>0x0&0x3,CQ,CA,Ca;switch(Cx){case 0x1:CQ=0x1,CA=0x0,Ca=0x1;break;case 0x2:CQ=0x0,CA=Ch,Ca=0x0;break;case 0x3:CQ=Ch,CA=0x0,Ca=0x0;break;default:CQ=0x0,CA=0x1,Ca=0x1;break;}let CW=null,CP=null,Cs=![],Cq=undefined,Cf=![],K0=0x0,K1=![],K2=0x0,K3=Cj[0x5]||k,K4=!!Cj[0x16],K5=!!Cj[0xf],K6=!!Cj[0xd],K7=!!Cj[0x7],K8=CI,K9=!!Cj[0x15];!K4&&!K9&&(CI===undefined||CI===null)&&(CI=vmr);if(Cj['os']!==undefined){let Ku=Cz['length']>>0x1,Kt=Ck?Ck['length']:0x0;K3=Cv(Cj['os'],Ku,Kt);}let KC=KD=>{Co[Cy++]=KD;},KK=()=>Co[--Cy],Kd=KD=>KD,KX={['_$z7jO8h']:null,['_$DOFvHe']:null,['_$wQwr8G']:null,['_$ANyjq7']:CM};if(CO){let KD=Cj[0xb]||0x0;for(let Kp=0x0,Kv=CO['length']<KD?CO['length']:KD;Kp<Kv;Kp++){CR[Kp]=CO[Kp];}}let KH=(K4||!K5)&&CO?C3(CO):null,Kc=null,Ke=![],Km=CR['length'],Kw=null,KG=0x0;K7&&(KX['_$wQwr8G']=vml(null),KX['_$wQwr8G']['__this__']=!![]);Cd(Cj,KX,CB);let KE={['_$8Byizy']:K4,['_$BvAUOR']:K5,['_$MJUums']:K6,['_$it8l4c']:K7,['_$zOetIH']:Ke,['_$HLaPsl']:K8,['_$ngYcoM']:KH,['_$6E2fiZ']:KX};while(CZ<Ch){try{while(CZ<Ch){let Kn=Cz[CQ+(CZ<<Ca)],KV=Cz[CA+(CZ<<Ca)];if(!KL)var Kr,Ki=null,KF=function(){for(var Kb=Km-0x1;Kb>=0x0;Kb--){CR[Kb]=Kw[--KG];}KX=Kw[--KG],KE['_$6E2fiZ']=KX,Kc=Kw[--KG],CO=Kw[--KG],Cy=Kw[--KG],CZ=Kw[--KG],Co[Cy++]=Kr,CZ++;},KL=function(Kb,Kg){switch(Kb){case 0x33:{Xg:{Co[--Cy]?CZ=CY[CZ]:CZ++;}break;}case 0xe:{XT:{let KT=Co[--Cy],KS=Co[--Cy];Co[Cy++]=KS%KT,CZ++;}break;}case 0xd:{XS:{let Kj=Co[--Cy],KO=Co[--Cy];Co[Cy++]=KO/Kj,CZ++;}break;}case 0x4a:{Xj:{let KM,KB;Kg!=null?(KB=Co[--Cy],KM=Ck[Kg]):(KM=Co[--Cy],KB=Co[--Cy]);let KN=delete KB[KM];if(Ki['_$8Byizy']&&!KN)throw new TypeError('Cannot\x20delete\x20property\x20\x27'+String(KM)+'\x27\x20of\x20object');Co[Cy++]=KN,CZ++;}break;}case 0x4c:{XO:{let KI=Co[--Cy],Ko=Ck[Kg];if(vmw_6b57e6['_$RdLZg8']&&Ko in vmw_6b57e6['_$RdLZg8'])throw new ReferenceError('Cannot\x20access\x20\x27'+Ko+'\x27\x20before\x20initialization');let Ky=!(Ko in vmw_6b57e6)&&!(Ko in vmr);vmw_6b57e6[Ko]=KI,Ko in vmr&&(vmr[Ko]=KI),Ky&&(vmr[Ko]=KI),Co[Cy++]=KI,CZ++;}break;}case 0x37:{XM:{let KR=Co[--Cy],KZ=Co[--Cy],Kk=Co[--Cy];if(typeof KZ!=='function')throw new TypeError(KZ+'\x20is\x20not\x20a\x20function');let Kz=vmw_6b57e6['_$ke6X7q'],KY=Kz&&Kz['get'](KZ),KJ=vmw_6b57e6['_$94L4k9'];KY&&(vmw_6b57e6['_$j3JHuR']=!![],vmw_6b57e6['_$94L4k9']=KY);let Kh;try{if(KR===0x0)Kh=vmv['call'](KZ,Kk);else{if(KR===0x1){let Kx=Co[--Cy];Kh=Kx&&typeof Kx==='object'&&s['has'](Kx)?vmn['call'](KZ,Kk,Kx['value']):vmv['call'](KZ,Kk,Kx);}else Kh=vmn['call'](KZ,Kk,C1(KK,KR));}Co[Cy++]=Kh;}finally{KY&&(vmw_6b57e6['_$j3JHuR']=![],vmw_6b57e6['_$94L4k9']=KJ);}CZ++;}break;}case 0x1b:{XB:{let KQ=Co[Cy-0x3],KA=Co[Cy-0x2],Ka=Co[Cy-0x1];Co[Cy-0x3]=KA,Co[Cy-0x2]=Ka,Co[Cy-0x1]=KQ,CZ++;}break;}case 0x28:{XN:{let KW=Co[--Cy],KP=Co[--Cy];Co[Cy++]=KP==KW,CZ++;}break;}case 0x4d:{XI:{Co[Cy++]={},CZ++;}break;}case 0x38:{Xo:{if(CW&&CW['length']>0x0){let Ks=CW[CW['length']-0x1];if(Ks['_$zMeiLt']!==undefined){Cs=!![],Cq=Co[--Cy],CZ=Ks['_$zMeiLt'];break Xo;}}return Cs&&(Cs=![],Cq=undefined),Kr=Co[--Cy],0x1;}break;}case 0x5:{Xy:{let Kq=Co[Cy-0x1];Co[Cy-0x1]=Co[Cy-0x2],Co[Cy-0x2]=Kq,CZ++;}break;}case 0x2a:{XR:{let Kf=Co[--Cy],d0=Co[--Cy];Co[Cy++]=d0===Kf,CZ++;}break;}case 0x20:{XZ:{Co[Cy-0x1]=!Co[Cy-0x1],CZ++;}break;}case 0x40:{Xk:{let d1=CY[CZ];if(CW&&CW['length']>0x0){let d2=CW[CW['length']-0x1];if(d2['_$zMeiLt']!==undefined&&d1>=d2['_$SoNb8N']){K1=!![],K2=d1,CZ=d2['_$zMeiLt'];break Xk;}}CZ=d1;}break;}case 0xa:{Xz:{let d3=Co[--Cy],d4=Co[--Cy];Co[Cy++]=d4+d3,CZ++;}break;}case 0x34:{XY:{!Co[--Cy]?CZ=CY[CZ]:CZ++;}break;}case 0x10:{XJ:{let d5=Co[--Cy];Co[Cy++]=typeof d5===W?d5+0x1n:+d5+0x1,CZ++;}break;}case 0x12:{Xh:{let d6=Co[--Cy],d7=Co[--Cy];Co[Cy++]=d7**d6,CZ++;}break;}case 0xc:{Xx:{let d8=Co[--Cy],d9=Co[--Cy];Co[Cy++]=d9*d8,CZ++;}break;}case 0x48:{XQ:{let dC=Co[--Cy],dK=Co[--Cy];if(dK===null||dK===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(dC)+'\x27\x20of\x20'+dK);Co[Cy++]=dK[dC],CZ++;}break;}case 0x15:{XA:{let dd=Co[--Cy],dX=Co[--Cy];Co[Cy++]=dX|dd,CZ++;}break;}case 0x29:{Xa:{let dH=Co[--Cy],dc=Co[--Cy];Co[Cy++]=dc!=dH,CZ++;}break;}case 0x2:{XW:{Co[Cy++]=null,CZ++;}break;}case 0x3d:{XP:{if(CW&&CW['length']>0x0){let de=CW[CW['length']-0x1];de['_$zMeiLt']===CZ&&(de['_$AsWEq2']!==undefined&&(CP=de['_$AsWEq2']),CW['pop']());}CZ++;}break;}case 0x14:{Xs:{let dm=Co[--Cy],dw=Co[--Cy];Co[Cy++]=dw&dm,CZ++;}break;}case 0x2f:{Xq:{let dG=Co[--Cy],dE=Co[--Cy];Co[Cy++]=dE>=dG,CZ++;}break;}case 0x3e:{Xf:{if(CP!==null){Cs=![],Cf=![],K1=![];let dr=CP;CP=null;throw dr;}if(Cs){if(CW&&CW['length']>0x0){let dF=CW[CW['length']-0x1];if(dF['_$zMeiLt']!==undefined){CZ=dF['_$zMeiLt'];break Xf;}}let di=Cq;return Cs=![],Cq=undefined,Kr=di,0x1;}if(Cf){if(CW&&CW['length']>0x0){let dl=CW[CW['length']-0x1];if(dl['_$zMeiLt']!==undefined){CZ=dl['_$zMeiLt'];break Xf;}}let dL=K0;Cf=![],K0=0x0,CZ=dL;break Xf;}if(K1){if(CW&&CW['length']>0x0){let du=CW[CW['length']-0x1];if(du['_$zMeiLt']!==undefined){CZ=du['_$zMeiLt'];break Xf;}}let dU=K2;K1=![],K2=0x0,CZ=dU;break Xf;}CZ++;}break;}case 0x1:{H0:{Co[Cy++]=undefined,CZ++;}break;}case 0x4:{H1:{let dt=Co[Cy-0x1];Co[Cy++]=dt,CZ++;}break;}case 0x16:{H2:{let dD=Co[--Cy],dp=Co[--Cy];Co[Cy++]=dp^dD,CZ++;}break;}case 0x49:{H3:{let dv=Co[--Cy],dn=Co[--Cy],dV=Co[--Cy];if(dV===null||dV===undefined)throw new TypeError('Cannot\x20set\x20property\x20\x27'+String(dn)+'\x27\x20of\x20'+dV);if(Ki['_$8Byizy']){if(!Reflect['set'](dV,dn,dv))throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(dn)+'\x27\x20of\x20object');}else dV[dn]=dv;Co[Cy++]=dv,CZ++;}break;}case 0x13:{H4:{Co[Cy-0x1]=+Co[Cy-0x1],CZ++;}break;}case 0x1a:{H5:{let db=Co[--Cy],dg=Co[--Cy];Co[Cy++]=dg>>>db,CZ++;}break;}case 0x4e:{H6:{let dT=Co[--Cy],dS=Ck[Kg];dT===null||dT===undefined?Co[Cy++]=undefined:Co[Cy++]=dT[dS],CZ++;}break;}case 0x18:{H7:{let dj=Co[--Cy],dO=Co[--Cy];Co[Cy++]=dO<<dj,CZ++;}break;}case 0x6:{H8:{Co[Cy++]=CR[Kg],CZ++;}break;}case 0x8:{H9:{Co[Cy++]=CO[Kg],CZ++;}break;}case 0x2c:{HC:{let dM=Co[--Cy],dB=Co[--Cy];Co[Cy++]=dB<dM,CZ++;}break;}case 0x46:{HK:{let dN=Co[--Cy],dI=Ck[Kg];if(dN===null||dN===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(dI)+'\x27\x20of\x20'+dN);Co[Cy++]=dN[dI],CZ++;}break;}case 0x0:{Hd:{Co[Cy++]=Ck[Kg],CZ++;}break;}case 0x19:{HX:{let dy=Co[--Cy],dR=Co[--Cy];Co[Cy++]=dR>>dy,CZ++;}break;}case 0x7:{HH:{CR[Kg]=Co[--Cy],CZ++;}break;}case 0x11:{Hc:{let dZ=Co[--Cy];Co[Cy++]=typeof dZ===W?dZ-0x1n:+dZ-0x1,CZ++;}break;}case 0x53:{He:{let dk=Co[--Cy],dz=Co[--Cy],dY=Ck[Kg];vmL(dz,dY,{'value':dk,'writable':!![],'enumerable':!![],'configurable':!![]}),typeof dk==='function'&&(!vmw_6b57e6['_$ke6X7q']&&(vmw_6b57e6['_$ke6X7q']=new WeakMap()),vmw_6b57e6['_$ke6X7q']['set'](dk,dz)),CZ++;}break;}case 0x9:{Hm:{CO[Kg]=Co[--Cy],CZ++;}break;}case 0x47:{Hw:{let dJ=Co[--Cy],dh=Co[--Cy],dx=Ck[Kg];if(dh===null||dh===undefined)throw new TypeError('Cannot\x20set\x20property\x20\x27'+String(dx)+'\x27\x20of\x20'+dh);if(Ki['_$8Byizy']){if(!Reflect['set'](dh,dx,dJ))throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(dx)+'\x27\x20of\x20object');}else dh[dx]=dJ;Co[Cy++]=dJ,CZ++;}break;}case 0x2e:{HG:{let dQ=Co[--Cy],dA=Co[--Cy];Co[Cy++]=dA>dQ,CZ++;}break;}case 0x32:{HE:{CZ=CY[CZ];}break;}case 0x2d:{Hr:{let da=Co[--Cy],dW=Co[--Cy];Co[Cy++]=dW<=da,CZ++;}break;}case 0x3b:{Hi:{CW['pop'](),CZ++;}break;}case 0x36:{HF:{let dP=Co[--Cy],ds=Co[--Cy];if(typeof ds!=='function')throw new TypeError(ds+'\x20is\x20not\x20a\x20function');let dq=vmw_6b57e6['_$ke6X7q'],df=!vmw_6b57e6['_$94L4k9']&&!vmw_6b57e6['_$UFEh0Q']&&!(dq&&dq['get'](ds))&&f['get'](ds);if(df){let X4=df['c']||(df['c']=Z(df['b']));if(X4){let X5;if(dP===0x0)X5=[];else{if(dP===0x1){let X7=Co[--Cy];X5=X7&&typeof X7==='object'&&s['has'](X7)?X7['value']:[X7];}else X5=C1(KK,dP);}let X6=X4[0xe];if(X6&&X4===Cj&&!X4[0x3]&&df['e']===CM){!Kw&&(Kw=[]);Kw[KG++]=CZ,Kw[KG++]=Cy,Kw[KG++]=CO,Kw[KG++]=Kc,Kw[KG++]=KX;for(let X9=0x0;X9<Km;X9++){Kw[KG++]=CR[X9];}CO=X5,Kc=null;let X8=X4[0xb]||0x0;for(let XC=0x0;XC<X8&&XC<X5['length'];XC++){CR[XC]=X5[XC];}for(let XK=X5['length']<X8?X5['length']:X8;XK<Km;XK++){CR[XK]=undefined;}CZ=X6;break HF;}vmw_6b57e6['_$j3JHuR']?vmw_6b57e6['_$j3JHuR']=![]:vmw_6b57e6['_$94L4k9']=undefined;Co[Cy++]=Cn(X4,X5,df['e'],ds,undefined,undefined),CZ++;break HF;}}let X0=vmw_6b57e6['_$94L4k9'],X1=vmw_6b57e6['_$ke6X7q'],X2=X1&&X1['get'](ds);X2?(vmw_6b57e6['_$j3JHuR']=!![],vmw_6b57e6['_$94L4k9']=X2):vmw_6b57e6['_$94L4k9']=undefined;let X3;try{if(dP===0x0)X3=ds();else{if(dP===0x1){let Xd=Co[--Cy];X3=Xd&&typeof Xd==='object'&&s['has'](Xd)?vmn['call'](ds,undefined,Xd['value']):ds(Xd);}else X3=vmn['call'](ds,undefined,C1(KK,dP));}Co[Cy++]=X3;}finally{X2&&(vmw_6b57e6['_$j3JHuR']=![]),vmw_6b57e6['_$94L4k9']=X0;}CZ++;}break;}case 0x52:{HL:{let XX=Co[--Cy],XH=Co[--Cy];XH===null||XH===undefined?Co[Cy++]=undefined:Co[Cy++]=XH[XX],CZ++;}break;}case 0x51:{Hl:{let Xc=Co[--Cy],Xe=Co[Cy-0x1];Xc!==null&&Xc!==undefined&&Object['assign'](Xe,Xc),CZ++;}break;}case 0x3f:{HU:{let Xm=CY[CZ];if(CW&&CW['length']>0x0){let Xw=CW[CW['length']-0x1];if(Xw['_$zMeiLt']!==undefined&&Xm>=Xw['_$SoNb8N']){Cf=!![],K0=Xm,CZ=Xw['_$zMeiLt'];break HU;}}CZ=Xm;}break;}case 0xb:{Hu:{let XG=Co[--Cy],XE=Co[--Cy];Co[Cy++]=XE-XG,CZ++;}break;}case 0x1d:{Ht:{Co[Cy-0x1]=String(Co[Cy-0x1]),CZ++;}break;}case 0x1c:{HD:{let Xr=Co[--Cy];Co[Cy++]=typeof Xr===W?Xr:+Xr,CZ++;}break;}case 0x39:{Hp:{throw Co[--Cy];}break;}case 0x17:{Hv:{Co[Cy-0x1]=~Co[Cy-0x1],CZ++;}break;}case 0x54:{Hn:{let Xi=Co[--Cy],XF=Co[--Cy],XL=Co[--Cy];vmL(XL,XF,{'value':Xi,'writable':!![],'enumerable':!![],'configurable':!![]}),typeof Xi==='function'&&(!vmw_6b57e6['_$ke6X7q']&&(vmw_6b57e6['_$ke6X7q']=new WeakMap()),vmw_6b57e6['_$ke6X7q']['set'](Xi,XL)),CZ++;}break;}case 0x3:{HV:{Co[--Cy],CZ++;}break;}case 0x35:{Hb:{let Xl=Co[--Cy];Xl!==null&&Xl!==undefined?CZ=CY[CZ]:CZ++;}break;}case 0xf:{Hg:{Co[Cy-0x1]=-Co[Cy-0x1],CZ++;}break;}case 0x4b:{HT:{let XU=Ck[Kg],Xu;if(vmw_6b57e6['_$RdLZg8']&&XU in vmw_6b57e6['_$RdLZg8'])throw new ReferenceError('Cannot\x20access\x20\x27'+XU+'\x27\x20before\x20initialization');if(XU in vmw_6b57e6)Xu=vmw_6b57e6[XU];else{if(XU in vmr)Xu=vmr[XU];else throw new ReferenceError(XU+'\x20is\x20not\x20defined');}Co[Cy++]=Xu,CZ++;}break;}case 0x3c:{HS:{let Xt=Co[--Cy];if(Kg!=null){let XD=Ck[Kg];!Ki['_$6E2fiZ']['_$z7jO8h']&&(Ki['_$6E2fiZ']['_$z7jO8h']=vml(null)),Ki['_$6E2fiZ']['_$z7jO8h'][XD]=Xt;}CZ++;}break;}case 0x3a:{Hj:{let Xp=CJ[CZ];if(!CW)CW=[];CW['push']({['_$SjnB0a']:Xp[0x0]>=0x0?Xp[0x0]:undefined,['_$zMeiLt']:Xp[0x1]>=0x0?Xp[0x1]:undefined,['_$SoNb8N']:Xp[0x2]>=0x0?Xp[0x2]:undefined,['_$nzrXHd']:Cy}),CZ++;}break;}case 0x2b:{HO:{let Xv=Co[--Cy],Xn=Co[--Cy];Co[Cy++]=Xn!==Xv,CZ++;}break;}case 0x4f:{HM:{let XV=Co[--Cy],Xb=Co[--Cy];Co[Cy++]=Xb in XV,CZ++;}break;}}},Kl=function(Kb,Kg){switch(Kb){case 0x99:{c2:{let KS=Co[--Cy],Kj=Ck[Kg],KO=![],KM=CK();if(KM){let KB=KM['get'](Kj);KB&&KB['has'](KS)&&(KO=!![]);}Co[Cy++]=KO,CZ++;}break;}case 0xb5:{c3:{let KN=Co[--Cy],KI=Co[--Cy],Ko=Co[Cy-0x1];vmL(Ko,KI,{'value':KN,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x5e:{c4:{let Ky=Co[--Cy],KR=Co[Cy-0x1];if(Array['isArray'](Ky))Array['prototype']['push']['apply'](KR,Ky);else for(let KZ of Ky){KR['push'](KZ);}CZ++;}break;}case 0xa0:{c5:{if(Ki['_$MJUums']&&!Ki['_$zOetIH'])throw new ReferenceError('Must\x20call\x20super\x20constructor\x20in\x20derived\x20class\x20before\x20accessing\x20\x27this\x27\x20or\x20returning\x20from\x20derived\x20constructor');Co[Cy++]=CI,CZ++;}break;}case 0xa2:{c6:{let Kk=Kg&0xffff,Kz=Kg>>0x10,KY=Ck[Kk],KJ=Ck[Kz];Co[Cy++]=new RegExp(KY,KJ),CZ++;}break;}case 0x64:{c7:{let Kh=Co[--Cy],Kx=Z(Kh),KQ=Kx&&Kx[0x15],KA=Kx&&Kx[0x6],Ka=Kx&&Kx[0xa],KW=Kx&&Kx[0x12],KP=Kx&&Kx[0xb]||0x0,Ks=Kx&&Kx[0x16],Kq=KQ?Ki['_$HLaPsl']:undefined,Kf=Ki['_$6E2fiZ'],d0;if(Ka)d0=Cm(CS,Kh,Kf,q,Ks,vmr,z);else{if(KA){if(KQ)d0=CG(CT,Kh,Kf,Kq);else KW?d0=Cr(CT,Kh,Kf,Ks,vmr,z):d0=Ce(CT,Kh,Kf,Ks,vmr,z);}else{if(KQ)d0=Cw(Cg,Kh,Kf,Kq);else KW?d0=CE(Cg,Kh,Kf,Ks,vmr,z):d0=Cc(Cg,Kh,Kf,Ks,vmr,z);}}C0(d0,'length',{'value':KP,'writable':![],'enumerable':![],'configurable':!![]}),Co[Cy++]=d0,CZ++;}break;}case 0xa5:{c8:{Co[Cy++]=vmi[Kg],CZ++;}break;}case 0x8d:{c9:{let d1=Co[--Cy],d2=Co[Cy-0x1];if(d1===null){vmD(d2['prototype'],null),vmD(d2,Function['prototype']),d2['_$bsftLB']=null,CZ++;break c9;}if(typeof d1!=='function')throw new TypeError('Class\x20extends\x20value\x20'+String(d1)+'\x20is\x20not\x20a\x20constructor\x20or\x20null');let d3=![];try{let d4=vml(d1['prototype']),d5=d1['apply'](d4,[]);d5!==undefined&&d5!==d4&&(d3=!![]);}catch(d6){d6 instanceof TypeError&&(d6['message']['includes']('\x27new\x27')||d6['message']['includes']('constructor')||d6['message']['includes']('Illegal\x20constructor'))&&(d3=!![]);}if(d3){let d7=d2,d8=vmw_6b57e6,d9='_$UFEh0Q',dC='_$1hRPKO',dK='_$X2V1dC';function KT(...dd){let dX=vml(d1['prototype']);d8[dK]={'parent':d1,'newTarget':new.target||KT},d8[dC]=new.target||KT;let dH=d9 in d8;!dH&&(d8[d9]=new.target);try{let dc=d7['apply'](dX,dd);dc!==undefined&&typeof dc==='object'&&(dX=dc);}finally{delete d8[dK],delete d8[dC],!dH&&delete d8[d9];}return dX;}KT['prototype']=vml(d1['prototype']),KT['prototype']['constructor']=KT,vmD(KT,d1),vmu(d7)['forEach'](function(dd){dd!=='prototype'&&dd!=='length'&&dd!=='name'&&C0(KT,dd,vmU(d7,dd));});d7['prototype']&&(vmu(d7['prototype'])['forEach'](function(dd){dd!=='constructor'&&C0(KT['prototype'],dd,vmU(d7['prototype'],dd));}),vmt(d7['prototype'])['forEach'](function(dd){C0(KT['prototype'],dd,vmU(d7['prototype'],dd));}));Co[--Cy],Co[Cy++]=KT,KT['_$bsftLB']=d1,CZ++;break c9;}vmD(d2['prototype'],d1['prototype']),vmD(d2,d1),d2['_$bsftLB']=d1,CZ++;}break;}case 0x8f:{cC:{let dd=Co[--Cy],dX=Co[--Cy],dH=Co[--Cy],dc=C5(dH),de=C6(dc,dX);de['desc']&&de['desc']['set']?de['desc']['set']['call'](dH,dd):dH[dX]=dd,Co[Cy++]=dd,CZ++;}break;}case 0xa3:{cK:{Co[--Cy],Co[Cy++]=undefined,CZ++;}break;}case 0xb8:{cd:{let dm=Co[--Cy],dw=Co[--Cy],dG=Co[Cy-0x1];vmL(dG,dw,{'get':dm,'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x9e:{cX:{let dE=Co[--Cy],dr=Co[--Cy],di=Ck[Kg],dF=CK();if(dF){let dU='set_'+di,du=dF['get'](dU);if(du&&du['has'](dr)){let dD=du['get'](dr);dD['call'](dr,dE),Co[Cy++]=dE,CZ++;break cX;}let dt=dF['get'](di);if(dt&&dt['has'](dr)){dt['set'](dr,dE),Co[Cy++]=dE,CZ++;break cX;}}let dL='_$P1uVX4'+'set_'+di['substring'](0x1)+'_$fO1r71';if(dL in dr){let dp=dr[dL];dp['call'](dr,dE),Co[Cy++]=dE,CZ++;break cX;}let dl=CX(di);if(dl in dr){dr[dl]=dE,Co[Cy++]=dE,CZ++;break cX;}throw new TypeError('Cannot\x20write\x20private\x20member\x20'+di+'\x20to\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0x9c:{cH:{let dv=Co[--Cy];Co[--Cy];let dn=Co[Cy-0x1],dV=Ck[Kg],db=CC();!db['has'](dV)&&db['set'](dV,new WeakMap());let dg=db['get'](dV);dg['set'](dn,dv),CZ++;}break;}case 0xb9:{cc:{let dT=Co[--Cy],dS=Co[--Cy],dj=Co[Cy-0x1];vmL(dj,dS,{'set':dT,'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0xb7:{ce:{let dO=Co[--Cy],dM=Co[--Cy],dB=Co[Cy-0x1],dN=C4(dB);vmL(dN,dM,{'set':dO,'enumerable':dN===dB,'configurable':!![]}),CZ++;}break;}case 0xa6:{cm:{Co[Cy++]=vmF[Kg],CZ++;}break;}case 0x80:{cw:{let dI=Co[--Cy];Co[Cy++]=!!dI['done'],CZ++;}break;}case 0x6a:{cG:{let dy=Co[--Cy];Co[Cy++]=import(dy),CZ++;}break;}case 0x95:{cE:{let dR=Co[--Cy],dZ=Co[Cy-0x1],dk=Ck[Kg];vmL(dZ,dk,{'set':dR,'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x5b:{cr:{let dz=Co[--Cy],dY=Co[Cy-0x1];dY['push'](dz),CZ++;}break;}case 0x98:{ci:{let dJ=Co[--Cy],dh=Co[--Cy],dx=Ck[Kg],dQ=CC();!dQ['has'](dx)&&dQ['set'](dx,new WeakMap());let dA=dQ['get'](dx);if(dA['has'](dh))throw new TypeError('Cannot\x20initialize\x20'+dx+'\x20twice\x20on\x20the\x20same\x20object');dA['set'](dh,dJ),CZ++;}break;}case 0x5a:{cF:{Co[Cy++]=[],CZ++;}break;}case 0x6f:{cL:{let da=Co[--Cy],dW=Co[--Cy];Co[Cy++]=dW instanceof da,CZ++;}break;}case 0x9d:{cl:{let dP=Co[--Cy],ds=Ck[Kg],dq=CK();if(dq){let X1='get_'+ds,X2=dq['get'](X1);if(X2&&X2['has'](dP)){let X4=X2['get'](dP);Co[Cy++]=X4['call'](dP),CZ++;break cl;}let X3=dq['get'](ds);if(X3&&X3['has'](dP)){Co[Cy++]=X3['get'](dP),CZ++;break cl;}}let df='_$P1uVX4'+'get_'+ds['substring'](0x1)+'_$fO1r71';if(df in dP){let X5=dP[df];Co[Cy++]=X5['call'](dP),CZ++;break cl;}let X0=CX(ds);if(X0 in dP){Co[Cy++]=dP[X0],CZ++;break cl;}throw new TypeError('Cannot\x20read\x20private\x20member\x20'+ds+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0x96:{cU:{let X6=Co[--Cy],X7=Ck[Kg],X8=CC(),X9='get_'+X7,XC=X8['get'](X9);if(XC&&XC['has'](X6)){let XH=XC['get'](X6);Co[Cy++]=XH['call'](X6),CZ++;break cU;}let XK='_$P1uVX4'+'get_'+X7['substring'](0x1)+'_$fO1r71';if(X6['constructor']&&XK in X6['constructor']){let Xc=X6['constructor'][XK];Co[Cy++]=Xc['call'](X6),CZ++;break cU;}let Xd=X8['get'](X7);if(Xd&&Xd['has'](X6)){Co[Cy++]=Xd['get'](X6),CZ++;break cU;}let XX=CX(X7);if(XX in X6){Co[Cy++]=X6[XX],CZ++;break cU;}throw new TypeError('Cannot\x20read\x20private\x20member\x20'+X7+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0x84:{cu:{let Xe=Co[--Cy];Co[Cy++]=C2(Xe),CZ++;}break;}case 0x5f:{ct:{let Xm=Co[Cy-0x1];Xm['length']++,CZ++;}break;}case 0xb6:{cD:{let Xw=Co[--Cy],XG=Co[--Cy],XE=Co[Cy-0x1],Xr=C4(XE);vmL(Xr,XG,{'get':Xw,'enumerable':Xr===XE,'configurable':!![]}),CZ++;}break;}case 0xa9:{cp:{let Xi=Co[--Cy];Co[Cy++]=Symbol['keyFor'](Xi),CZ++;}break;}case 0x68:{cv:{let XF=Co[--Cy],XL=C1(KK,XF),Xl=Co[--Cy];if(typeof Xl!=='function')throw new TypeError(Xl+'\x20is\x20not\x20a\x20constructor');if(q['has'](Xl))throw new TypeError(Xl['name']+'\x20is\x20not\x20a\x20constructor');let XU=vmw_6b57e6['_$94L4k9'];vmw_6b57e6['_$94L4k9']=undefined;let Xu;try{Xu=Reflect['construct'](Xl,XL);}finally{vmw_6b57e6['_$94L4k9']=XU;}Co[Cy++]=Xu,CZ++;}break;}case 0x90:{cn:{let Xt=Co[--Cy],XD=Co[Cy-0x1],Xp=Ck[Kg];vmL(XD['prototype'],Xp,{'value':Xt,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x8e:{cV:{let Xv=Co[--Cy],Xn=Co[--Cy],XV=vmw_6b57e6['_$94L4k9'],Xb=XV?vmp(XV):C5(Xn),Xg=C6(Xb,Xv);if(Xg['desc']&&Xg['desc']['get']){let XS=Xg['desc']['get']['call'](Xn);Co[Cy++]=XS,CZ++;break cV;}if(Xg['desc']&&Xg['desc']['set']&&!('value'in Xg['desc'])){Co[Cy++]=undefined,CZ++;break cV;}let XT=Xg['proto']?Xg['proto'][Xv]:Xb[Xv];if(typeof XT==='function'){let Xj=Xg['proto']||Xb,XO=XT['bind'](Xn),XM=XT['constructor']&&XT['constructor']['name'],XB=XM==='GeneratorFunction'||XM==='AsyncFunction'||XM==='AsyncGeneratorFunction';!XB&&(!vmw_6b57e6['_$ke6X7q']&&(vmw_6b57e6['_$ke6X7q']=new WeakMap()),vmw_6b57e6['_$ke6X7q']['set'](XO,Xj)),Co[Cy++]=XO;}else Co[Cy++]=XT;CZ++;}break;}case 0x91:{cb:{let XN=Co[--Cy],XI=Co[Cy-0x1],Xo=Ck[Kg],Xy=C4(XI);vmL(Xy,Xo,{'get':XN,'enumerable':Xy===XI,'configurable':!![]}),CZ++;}break;}case 0x70:{cg:{let XR=Ck[Kg];XR in vmw_6b57e6?Co[Cy++]=typeof vmw_6b57e6[XR]:Co[Cy++]=typeof vmr[XR],CZ++;}break;}case 0xa4:{cT:{Co[Cy++]=CN,CZ++;}break;}case 0x92:{cS:{let XZ=Co[--Cy],Xk=Co[Cy-0x1],Xz=Ck[Kg],XY=C4(Xk);vmL(XY,Xz,{'set':XZ,'enumerable':XY===Xk,'configurable':!![]}),CZ++;}break;}case 0x5d:{cj:{let XJ=Co[--Cy],Xh={'value':Array['isArray'](XJ)?XJ:Array['from'](XJ)};s['add'](Xh),Co[Cy++]=Xh,CZ++;}break;}case 0x8c:{cO:{let Xx=Co[--Cy],XQ=Co[--Cy],XA=Kg,Xa=function(XW,XP){let Xs=function(){if(XW){XP&&(vmw_6b57e6['_$1hRPKO']=Xs);let Xq='_$UFEh0Q'in vmw_6b57e6;!Xq&&(vmw_6b57e6['_$UFEh0Q']=new.target);try{let Xf=XW['apply'](this,C3(arguments));if(XP&&Xf!==undefined&&(typeof Xf!=='object'||Xf===null))throw new TypeError('Derived\x20constructors\x20may\x20only\x20return\x20object\x20or\x20undefined');return Xf;}finally{XP&&delete vmw_6b57e6['_$1hRPKO'],!Xq&&delete vmw_6b57e6['_$UFEh0Q'];}}};return Xs;}(XQ,XA);Xx&&vmL(Xa,'name',{'value':Xx,'configurable':!![]}),Co[Cy++]=Xa,CZ++;}break;}case 0x9a:{cM:{let XW=Co[--Cy],XP=Co[--Cy],Xs=Ck[Kg],Xq=null,Xf=CK();if(Xf){let H2=Xf['get'](Xs);H2&&H2['has'](XP)&&(Xq=H2['get'](XP));}if(Xq===null){let H3=CH(Xs);H3 in XP&&(Xq=XP[H3]);}if(Xq===null)throw new TypeError('Cannot\x20read\x20private\x20member\x20'+Xs+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');if(typeof Xq!=='function')throw new TypeError(Xs+'\x20is\x20not\x20a\x20function');let H0=C1(KK,XW),H1=Xq['apply'](XP,H0);Co[Cy++]=H1,CZ++;}break;}case 0xb4:{cB:{let H4=Co[--Cy],H5=Co[--Cy],H6=Co[Cy-0x1];vmL(H6['prototype'],H5,{'value':H4,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x69:{cN:{let H7=Co[--Cy],H8=C1(KK,H7),H9=Co[--Cy];if(Kg===0x1){Co[Cy++]=H8,CZ++;break cN;}if(vmw_6b57e6['_$CJ5oPD']){CZ++;break cN;}let HC=vmw_6b57e6['_$X2V1dC'];if(HC){let HK=HC['parent'],Hd=HC['newTarget'],HX=Reflect['construct'](HK,H8,Hd);CI&&CI!==HX&&vmu(CI)['forEach'](function(HH){!(HH in HX)&&(HX[HH]=CI[HH]);});CI=HX,Ki['_$zOetIH']=!![];Ki['_$it8l4c']&&(C7(Ki['_$6E2fiZ'],'__this__'),!Ki['_$6E2fiZ']['_$z7jO8h']&&(Ki['_$6E2fiZ']['_$z7jO8h']=vml(null)),Ki['_$6E2fiZ']['_$z7jO8h']['__this__']=CI);CZ++;break cN;}if(typeof H9!=='function')throw new TypeError('Super\x20expression\x20must\x20be\x20a\x20constructor');vmw_6b57e6['_$UFEh0Q']=CN;try{let HH=H9['apply'](CI,H8);HH!==undefined&&HH!==CI&&typeof HH==='object'&&(CI&&Object['assign'](HH,CI),CI=HH),Ki['_$zOetIH']=!![],Ki['_$it8l4c']&&(C7(Ki['_$6E2fiZ'],'__this__'),!Ki['_$6E2fiZ']['_$z7jO8h']&&(Ki['_$6E2fiZ']['_$z7jO8h']=vml(null)),Ki['_$6E2fiZ']['_$z7jO8h']['__this__']=CI);}catch(Hc){if(Hc instanceof TypeError&&(Hc['message']['includes']('\x27new\x27')||Hc['message']['includes']('constructor'))){let He=Reflect['construct'](H9,H8,CN);He!==CI&&CI&&Object['assign'](He,CI),CI=He,Ki['_$zOetIH']=!![],Ki['_$it8l4c']&&(C7(Ki['_$6E2fiZ'],'__this__'),!Ki['_$6E2fiZ']['_$z7jO8h']&&(Ki['_$6E2fiZ']['_$z7jO8h']=vml(null)),Ki['_$6E2fiZ']['_$z7jO8h']['__this__']=CI);}else throw Hc;}finally{delete vmw_6b57e6['_$UFEh0Q'];}CZ++;}break;}case 0x7b:{cI:{let Hm=Co[--Cy],Hw=Hm['next']();Co[Cy++]=Hw,CZ++;}break;}case 0x97:{co:{let HG=Co[--Cy],HE=Co[--Cy],Hr=Ck[Kg],Hi=CC(),HF='set_'+Hr,HL=Hi['get'](HF);if(HL&&HL['has'](HE)){let Ht=HL['get'](HE);Ht['call'](HE,HG),Co[Cy++]=HG,CZ++;break co;}let Hl='_$P1uVX4'+'set_'+Hr['substring'](0x1)+'_$fO1r71';if(HE['constructor']&&Hl in HE['constructor']){let HD=HE['constructor'][Hl];HD['call'](HE,HG),Co[Cy++]=HG,CZ++;break co;}let HU=Hi['get'](Hr);if(HU&&HU['has'](HE)){HU['set'](HE,HG),Co[Cy++]=HG,CZ++;break co;}let Hu=CX(Hr);if(Hu in HE){HE[Hu]=HG,Co[Cy++]=HG,CZ++;break co;}throw new TypeError('Cannot\x20write\x20private\x20member\x20'+Hr+'\x20to\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0xa7:{cy:{if(Kg===-0x1)Co[Cy++]=Symbol();else{let Hp=Co[--Cy];Co[Cy++]=Symbol(Hp);}CZ++;}break;}case 0x83:{cR:{let Hv=Co[--Cy];Hv&&typeof Hv['return']==='function'?Co[Cy++]=Promise['resolve'](Hv['return']()):Co[Cy++]=Promise['resolve'](),CZ++;}break;}case 0x6e:{cZ:{Co[Cy-0x1]=typeof Co[Cy-0x1],CZ++;}break;}case 0x81:{ck:{let Hn=Co[--Cy];if(Hn==null)throw new TypeError('Cannot\x20iterate\x20over\x20'+Hn);let HV=Hn[Symbol['asyncIterator']];if(typeof HV==='function')Co[Cy++]=HV['call'](Hn);else{let Hb=Hn[Symbol['iterator']];if(typeof Hb!=='function')throw new TypeError('Object\x20is\x20not\x20async\x20iterable');Co[Cy++]=Hb['call'](Hn);}CZ++;}break;}case 0xa8:{cz:{let Hg=Ck[Kg];Co[Cy++]=Symbol['for'](Hg),CZ++;}break;}case 0x7c:{cY:{let HT=Co[--Cy];HT&&typeof HT['return']==='function'&&HT['return'](),CZ++;}break;}case 0x93:{cJ:{let HS=Co[--Cy],Hj=Co[Cy-0x1],HO=Ck[Kg];vmL(Hj,HO,{'value':HS,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x9b:{ch:{let HM=Co[--Cy],HB=Ck[Kg];if(HM==null){Co[Cy++]=undefined,CZ++;break ch;}let HN=CC(),HI=HN['get'](HB);if(!HI||!HI['has'](HM))throw new TypeError('Cannot\x20read\x20private\x20member\x20'+HB+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');Co[Cy++]=HI['get'](HM),CZ++;}break;}case 0x7f:{cx:{let Ho=Co[--Cy];if(Ho==null)throw new TypeError('Cannot\x20iterate\x20over\x20'+Ho);let Hy=Ho[Symbol['iterator']];if(typeof Hy!=='function')throw new TypeError('Object\x20is\x20not\x20iterable');Co[Cy++]=vmv['call'](Hy,Ho),CZ++;}break;}case 0x82:{cQ:{let HR=Co[--Cy],HZ=HR['next']();Co[Cy++]=Promise['resolve'](HZ),CZ++;}break;}case 0xa1:{cA:{if(Kc===null){if(Ki['_$8Byizy']||!Ki['_$BvAUOR']){let Hk=Ki['_$ngYcoM']||CO,HY=Hk?Hk['length']:0x0;Kc=vml(Object['prototype']);for(let HJ=0x0;HJ<HY;HJ++){Kc[HJ]=Hk[HJ];}vmL(Kc,'length',{'value':HY,'writable':!![],'enumerable':![],'configurable':!![]}),Kc[Symbol['iterator']]=Array['prototype'][Symbol['iterator']],Kc=new Proxy(Kc,{'has':function(Hh,Hx){if(Hx===Symbol['toStringTag'])return![];return Hx in Hh;},'get':function(Hh,Hx,HQ){if(Hx===Symbol['toStringTag'])return'Arguments';return Reflect['get'](Hh,Hx,HQ);}});if(Ki['_$8Byizy']){let Hh=function(){throw new TypeError('\x27caller\x27,\x20\x27callee\x27,\x20and\x20\x27arguments\x27\x20properties\x20may\x20not\x20be\x20accessed\x20on\x20strict\x20mode\x20functions\x20or\x20the\x20arguments\x20objects\x20for\x20calls\x20to\x20them');};vmL(Kc,'callee',{'get':Hh,'set':Hh,'enumerable':![],'configurable':![]});}else vmL(Kc,'callee',{'value':CB,'writable':!![],'enumerable':![],'configurable':!![]});}else{let Hx=CO?CO['length']:0x0,HQ={},HA={},Ha=function(Hf){if(typeof Hf!=='string')return NaN;let c0=+Hf;return c0>=0x0&&c0%0x1===0x0&&String(c0)===Hf?c0:NaN;},HW=function(Hf){return!isNaN(Hf)&&Hf>=0x0;},HP=function(Hf){if(Hf in HA)return undefined;if(Hf in HQ)return HQ[Hf];return Hf<CO['length']?CO[Hf]:undefined;},Hs=function(Hf){if(Hf in HA)return![];if(Hf in HQ)return!![];return Hf<CO['length']?Hf in CO:![];},Hq={};vmL(Hq,'length',{'value':Hx,'writable':!![],'enumerable':![],'configurable':!![]}),vmL(Hq,'callee',{'value':CB,'writable':!![],'enumerable':![],'configurable':!![]}),Kc=new Proxy(Hq,{'get':function(Hf,c0,c1){if(c0==='length')return Hx;if(c0==='callee')return CB;if(c0===Symbol['toStringTag'])return'Arguments';if(c0===Symbol['iterator'])return Array['prototype'][Symbol['iterator']];let c2=Ha(c0);if(HW(c2))return HP(c2);return Reflect['get'](Hf,c0,c1);},'set':function(Hf,c0,c1){if(c0==='length')return Hx=c1,!![];let c2=Ha(c0);if(HW(c2)){if(c2 in HA)delete HA[c2],HQ[c2]=c1;else c2<CO['length']?CO[c2]=c1:HQ[c2]=c1;return!![];}return Hf[c0]=c1,!![];},'has':function(Hf,c0){if(c0==='length'||c0==='callee')return!![];if(c0===Symbol['toStringTag'])return![];let c1=Ha(c0);if(HW(c1))return Hs(c1);return c0 in Hf;},'defineProperty':function(Hf,c0,c1){return vmL(Hf,c0,c1),!![];},'deleteProperty':function(Hf,c0){let c1=Ha(c0);return HW(c1)&&(c1<CO['length']?HA[c1]=0x1:delete HQ[c1]),delete Hf[c0],!![];},'getOwnPropertyDescriptor':function(Hf,c0){if(c0==='callee')return{'value':CB,'writable':!![],'enumerable':![],'configurable':!![]};if(c0==='length')return{'value':Hx,'writable':!![],'enumerable':![],'configurable':!![]};let c1=vmU(Hf,c0);if(c1)return c1;let c2=Ha(c0);if(HW(c2)&&Hs(c2))return{'value':HP(c2),'writable':!![],'enumerable':!![],'configurable':!![]};return undefined;},'ownKeys':function(Hf){let c0=[];for(let c2=0x0;c2<Hx;c2++){Hs(c2)&&c0['push'](String(c2));}for(let c3 in HQ){c0['indexOf'](c3)===-0x1&&c0['push'](c3);}c0['push']('length','callee');let c1=Reflect['ownKeys'](Hf);for(let c4=0x0;c4<c1['length'];c4++){c0['indexOf'](c1[c4])===-0x1&&c0['push'](c1[c4]);}return c0;}});}}Co[Cy++]=Kc,CZ++;}break;}case 0x94:{ca:{let Hf=Co[--Cy],c0=Co[Cy-0x1],c1=Ck[Kg];vmL(c0,c1,{'get':Hf,'enumerable':![],'configurable':!![]}),CZ++;}break;}}},KU=function(Kb,Kg){switch(Kb){case 0xff:{dg:{let KT=Kg&0xffff,KS=Kg>>>0x10,Kj=CR[KT],KO=Ck[KS];Co[Cy++]=Kj[KO],CZ++;}break;}case 0xfc:{dT:{let KM=Kg&0xffff,KB=Kg>>>0x10;Co[Cy++]=CR[KM]+Ck[KB],CZ++;}break;}case 0xda:{dS:{let KN=Ck[Kg];!Ki['_$6E2fiZ']['_$wQwr8G']&&(Ki['_$6E2fiZ']['_$wQwr8G']=vml(null)),Ki['_$6E2fiZ']['_$wQwr8G'][KN]=!![],CZ++;}break;}case 0xfe:{dj:{let KI=Kg&0xffff,Ko=Kg>>>0x10;Co[Cy++]=CR[KI]*Ck[Ko],CZ++;}break;}case 0x105:{dO:{let Ky=CR[Kg]-0x1;CR[Kg]=Ky,Co[Cy++]=Ky,CZ++;}break;}case 0xd5:{dM:{Co[Cy++]=Ki['_$6E2fiZ'],CZ++;}break;}case 0xd8:{dB:{let KR=Ck[Kg],KZ=Co[--Cy],Kk=Ki['_$6E2fiZ'],Kz=![];while(Kk){if(Kk['_$z7jO8h']&&KR in Kk['_$z7jO8h']){if(Kk['_$DOFvHe']&&KR in Kk['_$DOFvHe'])break;Kk['_$z7jO8h'][KR]=KZ;!Kk['_$DOFvHe']&&(Kk['_$DOFvHe']=vml(null));Kk['_$DOFvHe'][KR]=!![],Kz=!![];break;}Kk=Kk['_$ANyjq7'];}!Kz&&(C8(Ki['_$6E2fiZ'],KR),!Ki['_$6E2fiZ']['_$z7jO8h']&&(Ki['_$6E2fiZ']['_$z7jO8h']=vml(null)),Ki['_$6E2fiZ']['_$z7jO8h'][KR]=KZ,!Ki['_$6E2fiZ']['_$DOFvHe']&&(Ki['_$6E2fiZ']['_$DOFvHe']=vml(null)),Ki['_$6E2fiZ']['_$DOFvHe'][KR]=!![]),CZ++;}break;}case 0xdb:{dN:{let KY=Ck[Kg],KJ=Co[--Cy],Kh=Ki['_$6E2fiZ']['_$ANyjq7'];Kh&&(!Kh['_$z7jO8h']&&(Kh['_$z7jO8h']=vml(null)),Kh['_$z7jO8h'][KY]=KJ),CZ++;}break;}case 0xd9:{dI:{let Kx=Ck[Kg],KQ=Co[--Cy];C7(Ki['_$6E2fiZ'],Kx);if(!Ki['_$6E2fiZ']['_$z7jO8h'])Ki['_$6E2fiZ']['_$z7jO8h']=vml(null);Ki['_$6E2fiZ']['_$z7jO8h'][Kx]=KQ,!Ki['_$6E2fiZ']['_$DOFvHe']&&(Ki['_$6E2fiZ']['_$DOFvHe']=vml(null)),Ki['_$6E2fiZ']['_$DOFvHe'][Kx]=!![],CZ++;}break;}case 0x100:{dy:{let KA=Kg&0xffff,Ka=Kg>>>0x10;Co[Cy++]=CR[KA]<Ck[Ka],CZ++;}break;}case 0xd4:{dR:{let KW=Ck[Kg],KP=Co[--Cy],Ks=Ki['_$6E2fiZ'],Kq=![];while(Ks){let Kf=Ks['_$wQwr8G'],d0=Ks['_$z7jO8h'];if(Kf&&KW in Kf)throw new ReferenceError('Cannot\x20access\x20\x27'+KW+'\x27\x20before\x20initialization');if(d0&&KW in d0){if(Ks['_$IlKMX6']&&KW in Ks['_$IlKMX6']){if(Ki['_$8Byizy'])throw new TypeError('Assignment\x20to\x20constant\x20variable.');Kq=!![];break;}if(Ks['_$DOFvHe']&&KW in Ks['_$DOFvHe'])throw new TypeError('Assignment\x20to\x20constant\x20variable.');d0[KW]=KP,Kq=!![];break;}Ks=Ks['_$ANyjq7'];}if(!Kq){if(KW in vmw_6b57e6)vmw_6b57e6[KW]=KP;else KW in vmr?vmr[KW]=KP:vmr[KW]=KP;}CZ++;}break;}case 0xfb:{dZ:{CR[Kg]=CR[Kg]-0x1,CZ++;}break;}case 0x101:{dk:{let d1=Kg&0xffff,d2=Kg>>>0x10;CR[d1]<Ck[d2]?CZ=CY[CZ]:CZ++;}break;}case 0xd6:{dz:{Ki['_$6E2fiZ']&&Ki['_$6E2fiZ']['_$ANyjq7']&&(Ki['_$6E2fiZ']=Ki['_$6E2fiZ']['_$ANyjq7']),CZ++;}break;}case 0x102:{dY:{let d3=Kg&0xffff,d4=Kg>>>0x10,d5=Co[--Cy],d6=C1(KK,d5),d7=CR[d3],d8=Ck[d4],d9=d7[d8];Co[Cy++]=d9['apply'](d7,d6),CZ++;}break;}case 0xdc:{dJ:{let dC=Co[--Cy],dK=Ck[Kg];if(Ki['_$8Byizy']&&!(dK in vmr)&&!(dK in vmw_6b57e6))throw new ReferenceError(dK+'\x20is\x20not\x20defined');vmw_6b57e6[dK]=dC,vmr[dK]=dC,Co[Cy++]=dC,CZ++;}break;}case 0xca:{dh:{return Kr=Cy>0x0?Co[--Cy]:undefined,0x1;}break;}case 0xfa:{dx:{CR[Kg]=CR[Kg]+0x1,CZ++;}break;}case 0xd7:{dQ:{let dd=Ck[Kg],dX=Co[--Cy];C7(Ki['_$6E2fiZ'],dd),!Ki['_$6E2fiZ']['_$z7jO8h']&&(Ki['_$6E2fiZ']['_$z7jO8h']=vml(null)),Ki['_$6E2fiZ']['_$z7jO8h'][dd]=dX,CZ++;}break;}case 0xc9:{dA:{CZ++;}break;}case 0xc8:{da:{debugger;CZ++;}break;}case 0xdd:{dW:{let dH=Kg&0xffff,dc=Kg>>>0x10,de=Ck[dH],dm=Ki['_$6E2fiZ'];for(let dE=0x0;dE<dc;dE++){dm=dm['_$ANyjq7'];}let dw=dm['_$wQwr8G'];if(dw&&de in dw)throw new ReferenceError('Cannot\x20access\x20\x27'+de+'\x27\x20before\x20initialization');let dG=dm['_$z7jO8h'];Co[Cy++]=dG?dG[de]:undefined,CZ++;}break;}case 0xd2:{dP:{let dr=Co[--Cy],di={['_$z7jO8h']:null,['_$DOFvHe']:null,['_$wQwr8G']:null,['_$ANyjq7']:dr};Ki['_$6E2fiZ']=di,CZ++;}break;}case 0x104:{ds:{let dF=CR[Kg]+0x1;CR[Kg]=dF,Co[Cy++]=dF,CZ++;}break;}case 0xd3:{dq:{let dL=Ck[Kg];if(dL==='__this__'){let dp=Ki['_$6E2fiZ'];while(dp){if(dp['_$wQwr8G']&&'__this__'in dp['_$wQwr8G'])throw new ReferenceError('Cannot\x20access\x20\x27__this__\x27\x20before\x20initialization');if(dp['_$z7jO8h']&&'__this__'in dp['_$z7jO8h'])break;dp=dp['_$ANyjq7'];}Co[Cy++]=CI,CZ++;break dq;}let dl=Ki['_$6E2fiZ'],dU,du=![],dt=dL['indexOf']('$$'),dD=dt!==-0x1?dL['substring'](0x0,dt):null;while(dl){let dv=dl['_$wQwr8G'],dn=dl['_$z7jO8h'];if(dv&&dL in dv)throw new ReferenceError('Cannot\x20access\x20\x27'+dL+'\x27\x20before\x20initialization');if(dD&&dv&&dD in dv){if(!(dn&&dL in dn))throw new ReferenceError('Cannot\x20access\x20\x27'+dD+'\x27\x20before\x20initialization');}if(dn&&dL in dn){dU=dn[dL],du=!![];break;}dl=dl['_$ANyjq7'];}!du&&(dL in vmw_6b57e6?dU=vmw_6b57e6[dL]:dU=vmr[dL]),Co[Cy++]=dU,CZ++;}break;}case 0x103:{df:{CR[Kg]=Co[--Cy],CZ++;}break;}case 0xfd:{X0:{let dV=Kg&0xffff,db=Kg>>>0x10;Co[Cy++]=CR[dV]-Ck[db],CZ++;}break;}}};switch(Kn){case 0x1c:{let Kb=Co[--Cy];Co[Cy++]=typeof Kb===W?Kb:+Kb,CZ++;continue;}case 0x0:{Co[Cy++]=Ck[KV],CZ++;continue;}case 0x6:{Co[Cy++]=CR[KV],CZ++;continue;}case 0x1:{Co[Cy++]=undefined,CZ++;continue;}case 0xa:{let Kg=Co[--Cy],KT=Co[--Cy];Co[Cy++]=KT+Kg,CZ++;continue;}case 0x46:{let KS=Co[--Cy],Kj=Ck[KV];if(KS===null||KS===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(Kj)+'\x27\x20of\x20'+KS);Co[Cy++]=KS[Kj],CZ++;continue;}case 0x1b:{let KO=Co[Cy-0x3],KM=Co[Cy-0x2],KB=Co[Cy-0x1];Co[Cy-0x3]=KM,Co[Cy-0x2]=KB,Co[Cy-0x1]=KO,CZ++;continue;}case 0x34:{!Co[--Cy]?CZ=CY[CZ]:CZ++;continue;}case 0x3:{Co[--Cy],CZ++;continue;}case 0x49:{let KN=Co[--Cy],KI=Co[--Cy],Ko=Co[--Cy];if(Ko===null||Ko===undefined)throw new TypeError('Cannot\x20set\x20property\x20\x27'+String(KI)+'\x27\x20of\x20'+Ko);if(K4){if(!Reflect['set'](Ko,KI,KN))throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(KI)+'\x27\x20of\x20object');}else Ko[KI]=KN;Co[Cy++]=KN,CZ++;continue;}case 0x7:{CR[KV]=Co[--Cy],CZ++;continue;}case 0x8:{Co[Cy++]=CO[KV],CZ++;continue;}case 0x4:{let Ky=Co[Cy-0x1];Co[Cy++]=Ky,CZ++;continue;}case 0x2e:{let KR=Co[--Cy],KZ=Co[--Cy];Co[Cy++]=KZ>KR,CZ++;continue;}case 0xdd:{let Kk=KV&0xffff,Kz=KV>>>0x10,KY=Ck[Kk],KJ=KX;for(let KQ=0x0;KQ<Kz;KQ++){KJ=KJ['_$ANyjq7'];}let Kh=KJ['_$wQwr8G'];if(Kh&&KY in Kh)throw new ReferenceError('Cannot\x20access\x20\x27'+KY+'\x27\x20before\x20initialization');let Kx=KJ['_$z7jO8h'];Co[Cy++]=Kx?Kx[KY]:undefined,CZ++;continue;}case 0x32:{CZ=CY[CZ];continue;}case 0x48:{let KA=Co[--Cy],Ka=Co[--Cy];if(Ka===null||Ka===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(KA)+'\x27\x20of\x20'+Ka);Co[Cy++]=Ka[KA],CZ++;continue;}case 0x10:{let KW=Co[--Cy];Co[Cy++]=typeof KW===W?KW+0x1n:+KW+0x1,CZ++;continue;}case 0x2c:{let KP=Co[--Cy],Ks=Co[--Cy];Co[Cy++]=Ks<KP,CZ++;continue;}case 0xb:{let Kq=Co[--Cy],Kf=Co[--Cy];Co[Cy++]=Kf-Kq,CZ++;continue;}}Ki=KE;if(Kn<0x5a){if(KL(Kn,KV)){if(KG>0x0){KF();continue;}return Kr;}}else{if(Kn<0xc8){if(Kl(Kn,KV)){if(KG>0x0){KF();continue;}return Kr;}}else{if(KU(Kn,KV)){if(KG>0x0){KF();continue;}return Kr;}}}KX=KE['_$6E2fiZ'],Ke=KE['_$zOetIH'];}break;}catch(d0){if(CW&&CW['length']>0x0){let d1=CW[CW['length']-0x1];Cy=d1['_$nzrXHd'];if(d1['_$SjnB0a']!==undefined)KC(d0),CZ=d1['_$SjnB0a'],d1['_$SjnB0a']=undefined,d1['_$zMeiLt']===undefined&&CW['pop']();else d1['_$zMeiLt']!==undefined?(CZ=d1['_$zMeiLt'],d1['_$AsWEq2']=d0):(CZ=d1['_$SoNb8N'],CW['pop']());continue;}throw d0;}}return Cy>0x0?Co[--Cy]:Ke?CI:undefined;}function CV(Cj,CO,CM,CB,CN,CI){let Co=new Array(0x8),Cy=0x0,CR=new Array((Cj[0xb]||0x0)+(Cj[0x13]||0x0)),CZ=0x0,Ck=Cj[0x9],Cz=Cj[0xc],CY=Cj[0x2]||P,CJ=Cj[0x3]||P,Ch=Cz['length']>>0x1,Cx=(Cj[0xb]*0x1f^Cj[0x13]*0x11^Ch*0xd^Ck['length']*0x7)>>>0x0&0x3,CQ,CA,Ca;switch(Cx){case 0x1:CQ=0x1,CA=0x0,Ca=0x1;break;case 0x2:CQ=0x0,CA=Ch,Ca=0x0;break;case 0x3:CQ=Ch,CA=0x0,Ca=0x0;break;default:CQ=0x0,CA=0x1,Ca=0x1;break;}let CW=null,CP=null,Cs=![],Cq=undefined,Cf=![],K0=0x0,K1=![],K2=0x0,K3=Cj[0x5]||k,K4=!!Cj[0x16],K5=!!Cj[0xf],K6=!!Cj[0xd],K7=!!Cj[0x7],K8=CI,K9=!!Cj[0x15];!K4&&!K9&&(CI===undefined||CI===null)&&(CI=vmr);if(Cj['os']!==undefined){let Ku=Cz['length']>>0x1,Kt=Ck?Ck['length']:0x0;K3=Cv(Cj['os'],Ku,Kt);}let KC=Cj[0x4],KK,Kd,KX,KH,Kc,Ke;if(KC!==undefined){let KD=Kp=>typeof Kp==='number'&&(Kp|0x0)===Kp&&!Object['is'](Kp,-0x0)?Kp^KC|0x0:Kp;KK=Kp=>{Co[Cy++]=KD(Kp);},Kd=()=>KD(Co[--Cy]),KX=()=>KD(Co[Cy-0x1]),KH=Kp=>{Co[Cy-0x1]=KD(Kp);},Kc=Kp=>KD(Co[Cy-Kp]),Ke=(Kp,Kv)=>{Co[Cy-Kp]=KD(Kv);};}else KK=Kp=>{Co[Cy++]=Kp;},Kd=()=>Co[--Cy],KX=()=>Co[Cy-0x1],KH=Kp=>{Co[Cy-0x1]=Kp;},Kc=Kp=>Co[Cy-Kp],Ke=(Kp,Kv)=>{Co[Cy-Kp]=Kv;};let Km=Kp=>Kp,Kw={['_$z7jO8h']:null,['_$DOFvHe']:null,['_$wQwr8G']:null,['_$ANyjq7']:CM};if(CO){let Kp=Cj[0xb]||0x0;for(let Kv=0x0,Kn=CO['length']<Kp?CO['length']:Kp;Kv<Kn;Kv++){CR[Kv]=CO[Kv];}}let KG=(K4||!K5)&&CO?C3(CO):null,KE=null,Kr=![],Ki=CR['length'],KF=null,KL=0x0;K7&&(Kw['_$wQwr8G']=vml(null),Kw['_$wQwr8G']['__this__']=!![]);Cd(Cj,Kw,CB);let Kl={['_$8Byizy']:K4,['_$BvAUOR']:K5,['_$MJUums']:K6,['_$it8l4c']:K7,['_$zOetIH']:Kr,['_$HLaPsl']:K8,['_$ngYcoM']:KG,['_$6E2fiZ']:Kw};function KU(KV,Kb){if(KV===0x1)KK(Kb);else{if(KV===0x2){if(CW&&CW['length']>0x0){let KB=CW[CW['length']-0x1];Cy=KB['_$nzrXHd'];if(KB['_$SjnB0a']!==undefined){KK(Kb),CZ=KB['_$SjnB0a'],KB['_$SjnB0a']=undefined;if(KB['_$zMeiLt']===undefined)CW['pop']();}else KB['_$zMeiLt']!==undefined?(CZ=KB['_$zMeiLt'],KB['_$AsWEq2']=Kb):(CZ=KB['_$SoNb8N'],CW['pop']());}else throw Kb;}else{if(KV===0x3){let KN=Kb;if(CW&&CW['length']>0x0){let KI=CW[CW['length']-0x1];if(KI['_$zMeiLt']!==undefined)Cs=!![],Cq=KN,CZ=KI['_$zMeiLt'];else return KN;}else return KN;}}}while(CZ<Ch){try{while(CZ<Ch){let Ko=Cz[CQ+(CZ<<Ca)],Ky=K3[Ko],KR=Cz[CA+(CZ<<Ca)];if(Ko===a){let KZ=Kd();return CZ++,{['_$zLXXJC']:Y,['_$iFxKZc']:KZ,'_d':KU};}if(Ko===Q){let Kk=Kd();return CZ++,{['_$zLXXJC']:J,['_$iFxKZc']:Kk,'_d':KU};}if(Ko===A){let Kz=Kd();return CZ++,{['_$zLXXJC']:h,['_$iFxKZc']:Kz,'_d':KU};}if(!Kj)var Kg,KT=null,KS=function(){for(var KY=Ki-0x1;KY>=0x0;KY--){CR[KY]=KF[--KL];}Kw=KF[--KL],Kl['_$6E2fiZ']=Kw,KE=KF[--KL],CO=KF[--KL],Cy=KF[--KL],CZ=KF[--KL],Co[Cy++]=Kg,CZ++;},Kj=function(KY,KJ){switch(KY){case 0x33:{XJ:{Co[--Cy]?CZ=CY[CZ]:CZ++;}break;}case 0xe:{Xh:{let Kh=Co[--Cy],Kx=Co[--Cy];Co[Cy++]=Kx%Kh,CZ++;}break;}case 0xd:{Xx:{let KQ=Co[--Cy],KA=Co[--Cy];Co[Cy++]=KA/KQ,CZ++;}break;}case 0x4a:{XQ:{let Ka,KW;KJ!=null?(KW=Co[--Cy],Ka=Ck[KJ]):(Ka=Co[--Cy],KW=Co[--Cy]);let KP=delete KW[Ka];if(KT['_$8Byizy']&&!KP)throw new TypeError('Cannot\x20delete\x20property\x20\x27'+String(Ka)+'\x27\x20of\x20object');Co[Cy++]=KP,CZ++;}break;}case 0x4c:{XA:{let Ks=Co[--Cy],Kq=Ck[KJ];if(vmw_6b57e6['_$RdLZg8']&&Kq in vmw_6b57e6['_$RdLZg8'])throw new ReferenceError('Cannot\x20access\x20\x27'+Kq+'\x27\x20before\x20initialization');let Kf=!(Kq in vmw_6b57e6)&&!(Kq in vmr);vmw_6b57e6[Kq]=Ks,Kq in vmr&&(vmr[Kq]=Ks),Kf&&(vmr[Kq]=Ks),Co[Cy++]=Ks,CZ++;}break;}case 0x37:{Xa:{let d0=Co[--Cy],d1=Co[--Cy],d2=Co[--Cy];if(typeof d1!=='function')throw new TypeError(d1+'\x20is\x20not\x20a\x20function');let d3=vmw_6b57e6['_$ke6X7q'],d4=d3&&d3['get'](d1),d5=vmw_6b57e6['_$94L4k9'];d4&&(vmw_6b57e6['_$j3JHuR']=!![],vmw_6b57e6['_$94L4k9']=d4);let d6;try{if(d0===0x0)d6=vmv['call'](d1,d2);else{if(d0===0x1){let d7=Co[--Cy];d6=d7&&typeof d7==='object'&&s['has'](d7)?vmn['call'](d1,d2,d7['value']):vmv['call'](d1,d2,d7);}else d6=vmn['call'](d1,d2,C1(Kd,d0));}Co[Cy++]=d6;}finally{d4&&(vmw_6b57e6['_$j3JHuR']=![],vmw_6b57e6['_$94L4k9']=d5);}CZ++;}break;}case 0x1b:{XW:{let d8=Co[Cy-0x3],d9=Co[Cy-0x2],dC=Co[Cy-0x1];Co[Cy-0x3]=d9,Co[Cy-0x2]=dC,Co[Cy-0x1]=d8,CZ++;}break;}case 0x28:{XP:{let dK=Co[--Cy],dd=Co[--Cy];Co[Cy++]=dd==dK,CZ++;}break;}case 0x4d:{Xs:{Co[Cy++]={},CZ++;}break;}case 0x38:{Xq:{if(CW&&CW['length']>0x0){let dX=CW[CW['length']-0x1];if(dX['_$zMeiLt']!==undefined){Cs=!![],Cq=Co[--Cy],CZ=dX['_$zMeiLt'];break Xq;}}return Cs&&(Cs=![],Cq=undefined),Kg=Co[--Cy],0x1;}break;}case 0x5:{Xf:{let dH=Co[Cy-0x1];Co[Cy-0x1]=Co[Cy-0x2],Co[Cy-0x2]=dH,CZ++;}break;}case 0x2a:{H0:{let dc=Co[--Cy],de=Co[--Cy];Co[Cy++]=de===dc,CZ++;}break;}case 0x20:{H1:{Co[Cy-0x1]=!Co[Cy-0x1],CZ++;}break;}case 0x40:{H2:{let dm=CY[CZ];if(CW&&CW['length']>0x0){let dw=CW[CW['length']-0x1];if(dw['_$zMeiLt']!==undefined&&dm>=dw['_$SoNb8N']){K1=!![],K2=dm,CZ=dw['_$zMeiLt'];break H2;}}CZ=dm;}break;}case 0xa:{H3:{let dG=Co[--Cy],dE=Co[--Cy];Co[Cy++]=dE+dG,CZ++;}break;}case 0x34:{H4:{!Co[--Cy]?CZ=CY[CZ]:CZ++;}break;}case 0x10:{H5:{let dr=Co[--Cy];Co[Cy++]=typeof dr===W?dr+0x1n:+dr+0x1,CZ++;}break;}case 0x12:{H6:{let di=Co[--Cy],dF=Co[--Cy];Co[Cy++]=dF**di,CZ++;}break;}case 0xc:{H7:{let dL=Co[--Cy],dl=Co[--Cy];Co[Cy++]=dl*dL,CZ++;}break;}case 0x48:{H8:{let dU=Co[--Cy],du=Co[--Cy];if(du===null||du===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(dU)+'\x27\x20of\x20'+du);Co[Cy++]=du[dU],CZ++;}break;}case 0x15:{H9:{let dt=Co[--Cy],dD=Co[--Cy];Co[Cy++]=dD|dt,CZ++;}break;}case 0x29:{HC:{let dp=Co[--Cy],dv=Co[--Cy];Co[Cy++]=dv!=dp,CZ++;}break;}case 0x2:{HK:{Co[Cy++]=null,CZ++;}break;}case 0x3d:{Hd:{if(CW&&CW['length']>0x0){let dn=CW[CW['length']-0x1];dn['_$zMeiLt']===CZ&&(dn['_$AsWEq2']!==undefined&&(CP=dn['_$AsWEq2']),CW['pop']());}CZ++;}break;}case 0x14:{HX:{let dV=Co[--Cy],db=Co[--Cy];Co[Cy++]=db&dV,CZ++;}break;}case 0x2f:{HH:{let dg=Co[--Cy],dT=Co[--Cy];Co[Cy++]=dT>=dg,CZ++;}break;}case 0x3e:{Hc:{if(CP!==null){Cs=![],Cf=![],K1=![];let dS=CP;CP=null;throw dS;}if(Cs){if(CW&&CW['length']>0x0){let dO=CW[CW['length']-0x1];if(dO['_$zMeiLt']!==undefined){CZ=dO['_$zMeiLt'];break Hc;}}let dj=Cq;return Cs=![],Cq=undefined,Kg=dj,0x1;}if(Cf){if(CW&&CW['length']>0x0){let dB=CW[CW['length']-0x1];if(dB['_$zMeiLt']!==undefined){CZ=dB['_$zMeiLt'];break Hc;}}let dM=K0;Cf=![],K0=0x0,CZ=dM;break Hc;}if(K1){if(CW&&CW['length']>0x0){let dI=CW[CW['length']-0x1];if(dI['_$zMeiLt']!==undefined){CZ=dI['_$zMeiLt'];break Hc;}}let dN=K2;K1=![],K2=0x0,CZ=dN;break Hc;}CZ++;}break;}case 0x1:{He:{Co[Cy++]=undefined,CZ++;}break;}case 0x4:{Hm:{let dy=Co[Cy-0x1];Co[Cy++]=dy,CZ++;}break;}case 0x16:{Hw:{let dR=Co[--Cy],dZ=Co[--Cy];Co[Cy++]=dZ^dR,CZ++;}break;}case 0x49:{HG:{let dk=Co[--Cy],dz=Co[--Cy],dY=Co[--Cy];if(dY===null||dY===undefined)throw new TypeError('Cannot\x20set\x20property\x20\x27'+String(dz)+'\x27\x20of\x20'+dY);if(KT['_$8Byizy']){if(!Reflect['set'](dY,dz,dk))throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(dz)+'\x27\x20of\x20object');}else dY[dz]=dk;Co[Cy++]=dk,CZ++;}break;}case 0x13:{HE:{Co[Cy-0x1]=+Co[Cy-0x1],CZ++;}break;}case 0x1a:{Hr:{let dJ=Co[--Cy],dh=Co[--Cy];Co[Cy++]=dh>>>dJ,CZ++;}break;}case 0x4e:{Hi:{let dx=Co[--Cy],dQ=Ck[KJ];dx===null||dx===undefined?Co[Cy++]=undefined:Co[Cy++]=dx[dQ],CZ++;}break;}case 0x18:{HF:{let dA=Co[--Cy],da=Co[--Cy];Co[Cy++]=da<<dA,CZ++;}break;}case 0x6:{HL:{Co[Cy++]=CR[KJ],CZ++;}break;}case 0x8:{Hl:{Co[Cy++]=CO[KJ],CZ++;}break;}case 0x2c:{HU:{let dW=Co[--Cy],dP=Co[--Cy];Co[Cy++]=dP<dW,CZ++;}break;}case 0x46:{Hu:{let ds=Co[--Cy],dq=Ck[KJ];if(ds===null||ds===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(dq)+'\x27\x20of\x20'+ds);Co[Cy++]=ds[dq],CZ++;}break;}case 0x0:{Ht:{Co[Cy++]=Ck[KJ],CZ++;}break;}case 0x19:{HD:{let df=Co[--Cy],X0=Co[--Cy];Co[Cy++]=X0>>df,CZ++;}break;}case 0x7:{Hp:{CR[KJ]=Co[--Cy],CZ++;}break;}case 0x11:{Hv:{let X1=Co[--Cy];Co[Cy++]=typeof X1===W?X1-0x1n:+X1-0x1,CZ++;}break;}case 0x53:{Hn:{let X2=Co[--Cy],X3=Co[--Cy],X4=Ck[KJ];vmL(X3,X4,{'value':X2,'writable':!![],'enumerable':!![],'configurable':!![]}),typeof X2==='function'&&(!vmw_6b57e6['_$ke6X7q']&&(vmw_6b57e6['_$ke6X7q']=new WeakMap()),vmw_6b57e6['_$ke6X7q']['set'](X2,X3)),CZ++;}break;}case 0x9:{HV:{CO[KJ]=Co[--Cy],CZ++;}break;}case 0x47:{Hb:{let X5=Co[--Cy],X6=Co[--Cy],X7=Ck[KJ];if(X6===null||X6===undefined)throw new TypeError('Cannot\x20set\x20property\x20\x27'+String(X7)+'\x27\x20of\x20'+X6);if(KT['_$8Byizy']){if(!Reflect['set'](X6,X7,X5))throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(X7)+'\x27\x20of\x20object');}else X6[X7]=X5;Co[Cy++]=X5,CZ++;}break;}case 0x2e:{Hg:{let X8=Co[--Cy],X9=Co[--Cy];Co[Cy++]=X9>X8,CZ++;}break;}case 0x32:{HT:{CZ=CY[CZ];}break;}case 0x2d:{HS:{let XC=Co[--Cy],XK=Co[--Cy];Co[Cy++]=XK<=XC,CZ++;}break;}case 0x3b:{Hj:{CW['pop'](),CZ++;}break;}case 0x36:{HO:{let Xd=Co[--Cy],XX=Co[--Cy];if(typeof XX!=='function')throw new TypeError(XX+'\x20is\x20not\x20a\x20function');let XH=vmw_6b57e6['_$ke6X7q'],Xc=!vmw_6b57e6['_$94L4k9']&&!vmw_6b57e6['_$UFEh0Q']&&!(XH&&XH['get'](XX))&&f['get'](XX);if(Xc){let XE=Xc['c']||(Xc['c']=Z(Xc['b']));if(XE){let Xr;if(Xd===0x0)Xr=[];else{if(Xd===0x1){let XF=Co[--Cy];Xr=XF&&typeof XF==='object'&&s['has'](XF)?XF['value']:[XF];}else Xr=C1(Kd,Xd);}let Xi=XE[0xe];if(Xi&&XE===Cj&&!XE[0x3]&&Xc['e']===CM){!KF&&(KF=[]);KF[KL++]=CZ,KF[KL++]=Cy,KF[KL++]=CO,KF[KL++]=KE,KF[KL++]=Kw;for(let Xl=0x0;Xl<Ki;Xl++){KF[KL++]=CR[Xl];}CO=Xr,KE=null;let XL=XE[0xb]||0x0;for(let XU=0x0;XU<XL&&XU<Xr['length'];XU++){CR[XU]=Xr[XU];}for(let Xu=Xr['length']<XL?Xr['length']:XL;Xu<Ki;Xu++){CR[Xu]=undefined;}CZ=Xi;break HO;}vmw_6b57e6['_$j3JHuR']?vmw_6b57e6['_$j3JHuR']=![]:vmw_6b57e6['_$94L4k9']=undefined;Co[Cy++]=Cn(XE,Xr,Xc['e'],XX,undefined,undefined),CZ++;break HO;}}let Xe=vmw_6b57e6['_$94L4k9'],Xm=vmw_6b57e6['_$ke6X7q'],Xw=Xm&&Xm['get'](XX);Xw?(vmw_6b57e6['_$j3JHuR']=!![],vmw_6b57e6['_$94L4k9']=Xw):vmw_6b57e6['_$94L4k9']=undefined;let XG;try{if(Xd===0x0)XG=XX();else{if(Xd===0x1){let Xt=Co[--Cy];XG=Xt&&typeof Xt==='object'&&s['has'](Xt)?vmn['call'](XX,undefined,Xt['value']):XX(Xt);}else XG=vmn['call'](XX,undefined,C1(Kd,Xd));}Co[Cy++]=XG;}finally{Xw&&(vmw_6b57e6['_$j3JHuR']=![]),vmw_6b57e6['_$94L4k9']=Xe;}CZ++;}break;}case 0x52:{HM:{let XD=Co[--Cy],Xp=Co[--Cy];Xp===null||Xp===undefined?Co[Cy++]=undefined:Co[Cy++]=Xp[XD],CZ++;}break;}case 0x51:{HB:{let Xv=Co[--Cy],Xn=Co[Cy-0x1];Xv!==null&&Xv!==undefined&&Object['assign'](Xn,Xv),CZ++;}break;}case 0x3f:{HN:{let XV=CY[CZ];if(CW&&CW['length']>0x0){let Xb=CW[CW['length']-0x1];if(Xb['_$zMeiLt']!==undefined&&XV>=Xb['_$SoNb8N']){Cf=!![],K0=XV,CZ=Xb['_$zMeiLt'];break HN;}}CZ=XV;}break;}case 0xb:{HI:{let Xg=Co[--Cy],XT=Co[--Cy];Co[Cy++]=XT-Xg,CZ++;}break;}case 0x1d:{Ho:{Co[Cy-0x1]=String(Co[Cy-0x1]),CZ++;}break;}case 0x1c:{Hy:{let XS=Co[--Cy];Co[Cy++]=typeof XS===W?XS:+XS,CZ++;}break;}case 0x39:{HR:{throw Co[--Cy];}break;}case 0x17:{HZ:{Co[Cy-0x1]=~Co[Cy-0x1],CZ++;}break;}case 0x54:{Hk:{let Xj=Co[--Cy],XO=Co[--Cy],XM=Co[--Cy];vmL(XM,XO,{'value':Xj,'writable':!![],'enumerable':!![],'configurable':!![]}),typeof Xj==='function'&&(!vmw_6b57e6['_$ke6X7q']&&(vmw_6b57e6['_$ke6X7q']=new WeakMap()),vmw_6b57e6['_$ke6X7q']['set'](Xj,XM)),CZ++;}break;}case 0x3:{HY:{Co[--Cy],CZ++;}break;}case 0x35:{HJ:{let XB=Co[--Cy];XB!==null&&XB!==undefined?CZ=CY[CZ]:CZ++;}break;}case 0xf:{Hh:{Co[Cy-0x1]=-Co[Cy-0x1],CZ++;}break;}case 0x4b:{Hx:{let XN=Ck[KJ],XI;if(vmw_6b57e6['_$RdLZg8']&&XN in vmw_6b57e6['_$RdLZg8'])throw new ReferenceError('Cannot\x20access\x20\x27'+XN+'\x27\x20before\x20initialization');if(XN in vmw_6b57e6)XI=vmw_6b57e6[XN];else{if(XN in vmr)XI=vmr[XN];else throw new ReferenceError(XN+'\x20is\x20not\x20defined');}Co[Cy++]=XI,CZ++;}break;}case 0x3c:{HQ:{let Xo=Co[--Cy];if(KJ!=null){let Xy=Ck[KJ];!KT['_$6E2fiZ']['_$z7jO8h']&&(KT['_$6E2fiZ']['_$z7jO8h']=vml(null)),KT['_$6E2fiZ']['_$z7jO8h'][Xy]=Xo;}CZ++;}break;}case 0x3a:{HA:{let XR=CJ[CZ];if(!CW)CW=[];CW['push']({['_$SjnB0a']:XR[0x0]>=0x0?XR[0x0]:undefined,['_$zMeiLt']:XR[0x1]>=0x0?XR[0x1]:undefined,['_$SoNb8N']:XR[0x2]>=0x0?XR[0x2]:undefined,['_$nzrXHd']:Cy}),CZ++;}break;}case 0x2b:{Ha:{let XZ=Co[--Cy],Xk=Co[--Cy];Co[Cy++]=Xk!==XZ,CZ++;}break;}case 0x4f:{HW:{let Xz=Co[--Cy],XY=Co[--Cy];Co[Cy++]=XY in Xz,CZ++;}break;}}},KO=function(KY,KJ){switch(KY){case 0x99:{cw:{let Kx=Co[--Cy],KQ=Ck[KJ],KA=![],Ka=CK();if(Ka){let KW=Ka['get'](KQ);KW&&KW['has'](Kx)&&(KA=!![]);}Co[Cy++]=KA,CZ++;}break;}case 0xb5:{cG:{let KP=Co[--Cy],Ks=Co[--Cy],Kq=Co[Cy-0x1];vmL(Kq,Ks,{'value':KP,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x5e:{cE:{let Kf=Co[--Cy],d0=Co[Cy-0x1];if(Array['isArray'](Kf))Array['prototype']['push']['apply'](d0,Kf);else for(let d1 of Kf){d0['push'](d1);}CZ++;}break;}case 0xa0:{cr:{if(KT['_$MJUums']&&!KT['_$zOetIH'])throw new ReferenceError('Must\x20call\x20super\x20constructor\x20in\x20derived\x20class\x20before\x20accessing\x20\x27this\x27\x20or\x20returning\x20from\x20derived\x20constructor');Co[Cy++]=CI,CZ++;}break;}case 0xa2:{ci:{let d2=KJ&0xffff,d3=KJ>>0x10,d4=Ck[d2],d5=Ck[d3];Co[Cy++]=new RegExp(d4,d5),CZ++;}break;}case 0x64:{cF:{let d6=Co[--Cy],d7=Z(d6),d8=d7&&d7[0x15],d9=d7&&d7[0x6],dC=d7&&d7[0xa],dK=d7&&d7[0x12],dd=d7&&d7[0xb]||0x0,dX=d7&&d7[0x16],dH=d8?KT['_$HLaPsl']:undefined,dc=KT['_$6E2fiZ'],de;if(dC)de=Cm(CS,d6,dc,q,dX,vmr,z);else{if(d9){if(d8)de=CG(CT,d6,dc,dH);else dK?de=Cr(CT,d6,dc,dX,vmr,z):de=Ce(CT,d6,dc,dX,vmr,z);}else{if(d8)de=Cw(Cg,d6,dc,dH);else dK?de=CE(Cg,d6,dc,dX,vmr,z):de=Cc(Cg,d6,dc,dX,vmr,z);}}C0(de,'length',{'value':dd,'writable':![],'enumerable':![],'configurable':!![]}),Co[Cy++]=de,CZ++;}break;}case 0xa5:{cL:{Co[Cy++]=vmi[KJ],CZ++;}break;}case 0x8d:{cl:{let dm=Co[--Cy],dw=Co[Cy-0x1];if(dm===null){vmD(dw['prototype'],null),vmD(dw,Function['prototype']),dw['_$bsftLB']=null,CZ++;break cl;}if(typeof dm!=='function')throw new TypeError('Class\x20extends\x20value\x20'+String(dm)+'\x20is\x20not\x20a\x20constructor\x20or\x20null');let dG=![];try{let dE=vml(dm['prototype']),dr=dm['apply'](dE,[]);dr!==undefined&&dr!==dE&&(dG=!![]);}catch(di){di instanceof TypeError&&(di['message']['includes']('\x27new\x27')||di['message']['includes']('constructor')||di['message']['includes']('Illegal\x20constructor'))&&(dG=!![]);}if(dG){let dF=dw,dL=vmw_6b57e6,dl='_$UFEh0Q',dU='_$1hRPKO',du='_$X2V1dC';function Kh(...dt){let dD=vml(dm['prototype']);dL[du]={'parent':dm,'newTarget':new.target||Kh},dL[dU]=new.target||Kh;let dp=dl in dL;!dp&&(dL[dl]=new.target);try{let dv=dF['apply'](dD,dt);dv!==undefined&&typeof dv==='object'&&(dD=dv);}finally{delete dL[du],delete dL[dU],!dp&&delete dL[dl];}return dD;}Kh['prototype']=vml(dm['prototype']),Kh['prototype']['constructor']=Kh,vmD(Kh,dm),vmu(dF)['forEach'](function(dt){dt!=='prototype'&&dt!=='length'&&dt!=='name'&&C0(Kh,dt,vmU(dF,dt));});dF['prototype']&&(vmu(dF['prototype'])['forEach'](function(dt){dt!=='constructor'&&C0(Kh['prototype'],dt,vmU(dF['prototype'],dt));}),vmt(dF['prototype'])['forEach'](function(dt){C0(Kh['prototype'],dt,vmU(dF['prototype'],dt));}));Co[--Cy],Co[Cy++]=Kh,Kh['_$bsftLB']=dm,CZ++;break cl;}vmD(dw['prototype'],dm['prototype']),vmD(dw,dm),dw['_$bsftLB']=dm,CZ++;}break;}case 0x8f:{cU:{let dt=Co[--Cy],dD=Co[--Cy],dp=Co[--Cy],dv=C5(dp),dn=C6(dv,dD);dn['desc']&&dn['desc']['set']?dn['desc']['set']['call'](dp,dt):dp[dD]=dt,Co[Cy++]=dt,CZ++;}break;}case 0xa3:{cu:{Co[--Cy],Co[Cy++]=undefined,CZ++;}break;}case 0xb8:{ct:{let dV=Co[--Cy],db=Co[--Cy],dg=Co[Cy-0x1];vmL(dg,db,{'get':dV,'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x9e:{cD:{let dT=Co[--Cy],dS=Co[--Cy],dj=Ck[KJ],dO=CK();if(dO){let dN='set_'+dj,dI=dO['get'](dN);if(dI&&dI['has'](dS)){let dR=dI['get'](dS);dR['call'](dS,dT),Co[Cy++]=dT,CZ++;break cD;}let dy=dO['get'](dj);if(dy&&dy['has'](dS)){dy['set'](dS,dT),Co[Cy++]=dT,CZ++;break cD;}}let dM='_$P1uVX4'+'set_'+dj['substring'](0x1)+'_$fO1r71';if(dM in dS){let dZ=dS[dM];dZ['call'](dS,dT),Co[Cy++]=dT,CZ++;break cD;}let dB=CX(dj);if(dB in dS){dS[dB]=dT,Co[Cy++]=dT,CZ++;break cD;}throw new TypeError('Cannot\x20write\x20private\x20member\x20'+dj+'\x20to\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0x9c:{cp:{let dk=Co[--Cy];Co[--Cy];let dz=Co[Cy-0x1],dY=Ck[KJ],dJ=CC();!dJ['has'](dY)&&dJ['set'](dY,new WeakMap());let dh=dJ['get'](dY);dh['set'](dz,dk),CZ++;}break;}case 0xb9:{cv:{let dx=Co[--Cy],dQ=Co[--Cy],dA=Co[Cy-0x1];vmL(dA,dQ,{'set':dx,'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0xb7:{cn:{let da=Co[--Cy],dW=Co[--Cy],dP=Co[Cy-0x1],ds=C4(dP);vmL(ds,dW,{'set':da,'enumerable':ds===dP,'configurable':!![]}),CZ++;}break;}case 0xa6:{cV:{Co[Cy++]=vmF[KJ],CZ++;}break;}case 0x80:{cb:{let dq=Co[--Cy];Co[Cy++]=!!dq['done'],CZ++;}break;}case 0x6a:{cg:{let df=Co[--Cy];Co[Cy++]=import(df),CZ++;}break;}case 0x95:{cT:{let X0=Co[--Cy],X1=Co[Cy-0x1],X2=Ck[KJ];vmL(X1,X2,{'set':X0,'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x5b:{cS:{let X3=Co[--Cy],X4=Co[Cy-0x1];X4['push'](X3),CZ++;}break;}case 0x98:{cj:{let X5=Co[--Cy],X6=Co[--Cy],X7=Ck[KJ],X8=CC();!X8['has'](X7)&&X8['set'](X7,new WeakMap());let X9=X8['get'](X7);if(X9['has'](X6))throw new TypeError('Cannot\x20initialize\x20'+X7+'\x20twice\x20on\x20the\x20same\x20object');X9['set'](X6,X5),CZ++;}break;}case 0x5a:{cO:{Co[Cy++]=[],CZ++;}break;}case 0x6f:{cM:{let XC=Co[--Cy],XK=Co[--Cy];Co[Cy++]=XK instanceof XC,CZ++;}break;}case 0x9d:{cB:{let Xd=Co[--Cy],XX=Ck[KJ],XH=CK();if(XH){let Xm='get_'+XX,Xw=XH['get'](Xm);if(Xw&&Xw['has'](Xd)){let XE=Xw['get'](Xd);Co[Cy++]=XE['call'](Xd),CZ++;break cB;}let XG=XH['get'](XX);if(XG&&XG['has'](Xd)){Co[Cy++]=XG['get'](Xd),CZ++;break cB;}}let Xc='_$P1uVX4'+'get_'+XX['substring'](0x1)+'_$fO1r71';if(Xc in Xd){let Xr=Xd[Xc];Co[Cy++]=Xr['call'](Xd),CZ++;break cB;}let Xe=CX(XX);if(Xe in Xd){Co[Cy++]=Xd[Xe],CZ++;break cB;}throw new TypeError('Cannot\x20read\x20private\x20member\x20'+XX+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0x96:{cN:{let Xi=Co[--Cy],XF=Ck[KJ],XL=CC(),Xl='get_'+XF,XU=XL['get'](Xl);if(XU&&XU['has'](Xi)){let Xp=XU['get'](Xi);Co[Cy++]=Xp['call'](Xi),CZ++;break cN;}let Xu='_$P1uVX4'+'get_'+XF['substring'](0x1)+'_$fO1r71';if(Xi['constructor']&&Xu in Xi['constructor']){let Xv=Xi['constructor'][Xu];Co[Cy++]=Xv['call'](Xi),CZ++;break cN;}let Xt=XL['get'](XF);if(Xt&&Xt['has'](Xi)){Co[Cy++]=Xt['get'](Xi),CZ++;break cN;}let XD=CX(XF);if(XD in Xi){Co[Cy++]=Xi[XD],CZ++;break cN;}throw new TypeError('Cannot\x20read\x20private\x20member\x20'+XF+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0x84:{cI:{let Xn=Co[--Cy];Co[Cy++]=C2(Xn),CZ++;}break;}case 0x5f:{co:{let XV=Co[Cy-0x1];XV['length']++,CZ++;}break;}case 0xb6:{cy:{let Xb=Co[--Cy],Xg=Co[--Cy],XT=Co[Cy-0x1],XS=C4(XT);vmL(XS,Xg,{'get':Xb,'enumerable':XS===XT,'configurable':!![]}),CZ++;}break;}case 0xa9:{cR:{let Xj=Co[--Cy];Co[Cy++]=Symbol['keyFor'](Xj),CZ++;}break;}case 0x68:{cZ:{let XO=Co[--Cy],XM=C1(Kd,XO),XB=Co[--Cy];if(typeof XB!=='function')throw new TypeError(XB+'\x20is\x20not\x20a\x20constructor');if(q['has'](XB))throw new TypeError(XB['name']+'\x20is\x20not\x20a\x20constructor');let XN=vmw_6b57e6['_$94L4k9'];vmw_6b57e6['_$94L4k9']=undefined;let XI;try{XI=Reflect['construct'](XB,XM);}finally{vmw_6b57e6['_$94L4k9']=XN;}Co[Cy++]=XI,CZ++;}break;}case 0x90:{ck:{let Xo=Co[--Cy],Xy=Co[Cy-0x1],XR=Ck[KJ];vmL(Xy['prototype'],XR,{'value':Xo,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x8e:{cz:{let XZ=Co[--Cy],Xk=Co[--Cy],Xz=vmw_6b57e6['_$94L4k9'],XY=Xz?vmp(Xz):C5(Xk),XJ=C6(XY,XZ);if(XJ['desc']&&XJ['desc']['get']){let Xx=XJ['desc']['get']['call'](Xk);Co[Cy++]=Xx,CZ++;break cz;}if(XJ['desc']&&XJ['desc']['set']&&!('value'in XJ['desc'])){Co[Cy++]=undefined,CZ++;break cz;}let Xh=XJ['proto']?XJ['proto'][XZ]:XY[XZ];if(typeof Xh==='function'){let XQ=XJ['proto']||XY,XA=Xh['bind'](Xk),Xa=Xh['constructor']&&Xh['constructor']['name'],XW=Xa==='GeneratorFunction'||Xa==='AsyncFunction'||Xa==='AsyncGeneratorFunction';!XW&&(!vmw_6b57e6['_$ke6X7q']&&(vmw_6b57e6['_$ke6X7q']=new WeakMap()),vmw_6b57e6['_$ke6X7q']['set'](XA,XQ)),Co[Cy++]=XA;}else Co[Cy++]=Xh;CZ++;}break;}case 0x91:{cY:{let XP=Co[--Cy],Xs=Co[Cy-0x1],Xq=Ck[KJ],Xf=C4(Xs);vmL(Xf,Xq,{'get':XP,'enumerable':Xf===Xs,'configurable':!![]}),CZ++;}break;}case 0x70:{cJ:{let H0=Ck[KJ];H0 in vmw_6b57e6?Co[Cy++]=typeof vmw_6b57e6[H0]:Co[Cy++]=typeof vmr[H0],CZ++;}break;}case 0xa4:{ch:{Co[Cy++]=CN,CZ++;}break;}case 0x92:{cx:{let H1=Co[--Cy],H2=Co[Cy-0x1],H3=Ck[KJ],H4=C4(H2);vmL(H4,H3,{'set':H1,'enumerable':H4===H2,'configurable':!![]}),CZ++;}break;}case 0x5d:{cQ:{let H5=Co[--Cy],H6={'value':Array['isArray'](H5)?H5:Array['from'](H5)};s['add'](H6),Co[Cy++]=H6,CZ++;}break;}case 0x8c:{cA:{let H7=Co[--Cy],H8=Co[--Cy],H9=KJ,HC=function(HK,Hd){let HX=function(){if(HK){Hd&&(vmw_6b57e6['_$1hRPKO']=HX);let HH='_$UFEh0Q'in vmw_6b57e6;!HH&&(vmw_6b57e6['_$UFEh0Q']=new.target);try{let Hc=HK['apply'](this,C3(arguments));if(Hd&&Hc!==undefined&&(typeof Hc!=='object'||Hc===null))throw new TypeError('Derived\x20constructors\x20may\x20only\x20return\x20object\x20or\x20undefined');return Hc;}finally{Hd&&delete vmw_6b57e6['_$1hRPKO'],!HH&&delete vmw_6b57e6['_$UFEh0Q'];}}};return HX;}(H8,H9);H7&&vmL(HC,'name',{'value':H7,'configurable':!![]}),Co[Cy++]=HC,CZ++;}break;}case 0x9a:{ca:{let HK=Co[--Cy],Hd=Co[--Cy],HX=Ck[KJ],HH=null,Hc=CK();if(Hc){let Hw=Hc['get'](HX);Hw&&Hw['has'](Hd)&&(HH=Hw['get'](Hd));}if(HH===null){let HG=CH(HX);HG in Hd&&(HH=Hd[HG]);}if(HH===null)throw new TypeError('Cannot\x20read\x20private\x20member\x20'+HX+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');if(typeof HH!=='function')throw new TypeError(HX+'\x20is\x20not\x20a\x20function');let He=C1(Kd,HK),Hm=HH['apply'](Hd,He);Co[Cy++]=Hm,CZ++;}break;}case 0xb4:{cW:{let HE=Co[--Cy],Hr=Co[--Cy],Hi=Co[Cy-0x1];vmL(Hi['prototype'],Hr,{'value':HE,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x69:{cP:{let HF=Co[--Cy],HL=C1(Kd,HF),Hl=Co[--Cy];if(KJ===0x1){Co[Cy++]=HL,CZ++;break cP;}if(vmw_6b57e6['_$CJ5oPD']){CZ++;break cP;}let HU=vmw_6b57e6['_$X2V1dC'];if(HU){let Hu=HU['parent'],Ht=HU['newTarget'],HD=Reflect['construct'](Hu,HL,Ht);CI&&CI!==HD&&vmu(CI)['forEach'](function(Hp){!(Hp in HD)&&(HD[Hp]=CI[Hp]);});CI=HD,KT['_$zOetIH']=!![];KT['_$it8l4c']&&(C7(KT['_$6E2fiZ'],'__this__'),!KT['_$6E2fiZ']['_$z7jO8h']&&(KT['_$6E2fiZ']['_$z7jO8h']=vml(null)),KT['_$6E2fiZ']['_$z7jO8h']['__this__']=CI);CZ++;break cP;}if(typeof Hl!=='function')throw new TypeError('Super\x20expression\x20must\x20be\x20a\x20constructor');vmw_6b57e6['_$UFEh0Q']=CN;try{let Hp=Hl['apply'](CI,HL);Hp!==undefined&&Hp!==CI&&typeof Hp==='object'&&(CI&&Object['assign'](Hp,CI),CI=Hp),KT['_$zOetIH']=!![],KT['_$it8l4c']&&(C7(KT['_$6E2fiZ'],'__this__'),!KT['_$6E2fiZ']['_$z7jO8h']&&(KT['_$6E2fiZ']['_$z7jO8h']=vml(null)),KT['_$6E2fiZ']['_$z7jO8h']['__this__']=CI);}catch(Hv){if(Hv instanceof TypeError&&(Hv['message']['includes']('\x27new\x27')||Hv['message']['includes']('constructor'))){let Hn=Reflect['construct'](Hl,HL,CN);Hn!==CI&&CI&&Object['assign'](Hn,CI),CI=Hn,KT['_$zOetIH']=!![],KT['_$it8l4c']&&(C7(KT['_$6E2fiZ'],'__this__'),!KT['_$6E2fiZ']['_$z7jO8h']&&(KT['_$6E2fiZ']['_$z7jO8h']=vml(null)),KT['_$6E2fiZ']['_$z7jO8h']['__this__']=CI);}else throw Hv;}finally{delete vmw_6b57e6['_$UFEh0Q'];}CZ++;}break;}case 0x7b:{cs:{let HV=Co[--Cy],Hb=HV['next']();Co[Cy++]=Hb,CZ++;}break;}case 0x97:{cq:{let Hg=Co[--Cy],HT=Co[--Cy],HS=Ck[KJ],Hj=CC(),HO='set_'+HS,HM=Hj['get'](HO);if(HM&&HM['has'](HT)){let Ho=HM['get'](HT);Ho['call'](HT,Hg),Co[Cy++]=Hg,CZ++;break cq;}let HB='_$P1uVX4'+'set_'+HS['substring'](0x1)+'_$fO1r71';if(HT['constructor']&&HB in HT['constructor']){let Hy=HT['constructor'][HB];Hy['call'](HT,Hg),Co[Cy++]=Hg,CZ++;break cq;}let HN=Hj['get'](HS);if(HN&&HN['has'](HT)){HN['set'](HT,Hg),Co[Cy++]=Hg,CZ++;break cq;}let HI=CX(HS);if(HI in HT){HT[HI]=Hg,Co[Cy++]=Hg,CZ++;break cq;}throw new TypeError('Cannot\x20write\x20private\x20member\x20'+HS+'\x20to\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');}break;}case 0xa7:{cf:{if(KJ===-0x1)Co[Cy++]=Symbol();else{let HR=Co[--Cy];Co[Cy++]=Symbol(HR);}CZ++;}break;}case 0x83:{e0:{let HZ=Co[--Cy];HZ&&typeof HZ['return']==='function'?Co[Cy++]=Promise['resolve'](HZ['return']()):Co[Cy++]=Promise['resolve'](),CZ++;}break;}case 0x6e:{e1:{Co[Cy-0x1]=typeof Co[Cy-0x1],CZ++;}break;}case 0x81:{e2:{let Hk=Co[--Cy];if(Hk==null)throw new TypeError('Cannot\x20iterate\x20over\x20'+Hk);let HY=Hk[Symbol['asyncIterator']];if(typeof HY==='function')Co[Cy++]=HY['call'](Hk);else{let HJ=Hk[Symbol['iterator']];if(typeof HJ!=='function')throw new TypeError('Object\x20is\x20not\x20async\x20iterable');Co[Cy++]=HJ['call'](Hk);}CZ++;}break;}case 0xa8:{e3:{let Hh=Ck[KJ];Co[Cy++]=Symbol['for'](Hh),CZ++;}break;}case 0x7c:{e4:{let Hx=Co[--Cy];Hx&&typeof Hx['return']==='function'&&Hx['return'](),CZ++;}break;}case 0x93:{e5:{let HQ=Co[--Cy],HA=Co[Cy-0x1],Ha=Ck[KJ];vmL(HA,Ha,{'value':HQ,'writable':!![],'enumerable':![],'configurable':!![]}),CZ++;}break;}case 0x9b:{e6:{let HW=Co[--Cy],HP=Ck[KJ];if(HW==null){Co[Cy++]=undefined,CZ++;break e6;}let Hs=CC(),Hq=Hs['get'](HP);if(!Hq||!Hq['has'](HW))throw new TypeError('Cannot\x20read\x20private\x20member\x20'+HP+'\x20from\x20an\x20object\x20whose\x20class\x20did\x20not\x20declare\x20it');Co[Cy++]=Hq['get'](HW),CZ++;}break;}case 0x7f:{e7:{let Hf=Co[--Cy];if(Hf==null)throw new TypeError('Cannot\x20iterate\x20over\x20'+Hf);let c0=Hf[Symbol['iterator']];if(typeof c0!=='function')throw new TypeError('Object\x20is\x20not\x20iterable');Co[Cy++]=vmv['call'](c0,Hf),CZ++;}break;}case 0x82:{e8:{let c1=Co[--Cy],c2=c1['next']();Co[Cy++]=Promise['resolve'](c2),CZ++;}break;}case 0xa1:{e9:{if(KE===null){if(KT['_$8Byizy']||!KT['_$BvAUOR']){let c3=KT['_$ngYcoM']||CO,c4=c3?c3['length']:0x0;KE=vml(Object['prototype']);for(let c5=0x0;c5<c4;c5++){KE[c5]=c3[c5];}vmL(KE,'length',{'value':c4,'writable':!![],'enumerable':![],'configurable':!![]}),KE[Symbol['iterator']]=Array['prototype'][Symbol['iterator']],KE=new Proxy(KE,{'has':function(c6,c7){if(c7===Symbol['toStringTag'])return![];return c7 in c6;},'get':function(c6,c7,c8){if(c7===Symbol['toStringTag'])return'Arguments';return Reflect['get'](c6,c7,c8);}});if(KT['_$8Byizy']){let c6=function(){throw new TypeError('\x27caller\x27,\x20\x27callee\x27,\x20and\x20\x27arguments\x27\x20properties\x20may\x20not\x20be\x20accessed\x20on\x20strict\x20mode\x20functions\x20or\x20the\x20arguments\x20objects\x20for\x20calls\x20to\x20them');};vmL(KE,'callee',{'get':c6,'set':c6,'enumerable':![],'configurable':![]});}else vmL(KE,'callee',{'value':CB,'writable':!![],'enumerable':![],'configurable':!![]});}else{let c7=CO?CO['length']:0x0,c8={},c9={},cC=function(cc){if(typeof cc!=='string')return NaN;let ce=+cc;return ce>=0x0&&ce%0x1===0x0&&String(ce)===cc?ce:NaN;},cK=function(cc){return!isNaN(cc)&&cc>=0x0;},cd=function(cc){if(cc in c9)return undefined;if(cc in c8)return c8[cc];return cc<CO['length']?CO[cc]:undefined;},cX=function(cc){if(cc in c9)return![];if(cc in c8)return!![];return cc<CO['length']?cc in CO:![];},cH={};vmL(cH,'length',{'value':c7,'writable':!![],'enumerable':![],'configurable':!![]}),vmL(cH,'callee',{'value':CB,'writable':!![],'enumerable':![],'configurable':!![]}),KE=new Proxy(cH,{'get':function(cc,ce,cm){if(ce==='length')return c7;if(ce==='callee')return CB;if(ce===Symbol['toStringTag'])return'Arguments';if(ce===Symbol['iterator'])return Array['prototype'][Symbol['iterator']];let cw=cC(ce);if(cK(cw))return cd(cw);return Reflect['get'](cc,ce,cm);},'set':function(cc,ce,cm){if(ce==='length')return c7=cm,!![];let cw=cC(ce);if(cK(cw)){if(cw in c9)delete c9[cw],c8[cw]=cm;else cw<CO['length']?CO[cw]=cm:c8[cw]=cm;return!![];}return cc[ce]=cm,!![];},'has':function(cc,ce){if(ce==='length'||ce==='callee')return!![];if(ce===Symbol['toStringTag'])return![];let cm=cC(ce);if(cK(cm))return cX(cm);return ce in cc;},'defineProperty':function(cc,ce,cm){return vmL(cc,ce,cm),!![];},'deleteProperty':function(cc,ce){let cm=cC(ce);return cK(cm)&&(cm<CO['length']?c9[cm]=0x1:delete c8[cm]),delete cc[ce],!![];},'getOwnPropertyDescriptor':function(cc,ce){if(ce==='callee')return{'value':CB,'writable':!![],'enumerable':![],'configurable':!![]};if(ce==='length')return{'value':c7,'writable':!![],'enumerable':![],'configurable':!![]};let cm=vmU(cc,ce);if(cm)return cm;let cw=cC(ce);if(cK(cw)&&cX(cw))return{'value':cd(cw),'writable':!![],'enumerable':!![],'configurable':!![]};return undefined;},'ownKeys':function(cc){let ce=[];for(let cw=0x0;cw<c7;cw++){cX(cw)&&ce['push'](String(cw));}for(let cG in c8){ce['indexOf'](cG)===-0x1&&ce['push'](cG);}ce['push']('length','callee');let cm=Reflect['ownKeys'](cc);for(let cE=0x0;cE<cm['length'];cE++){ce['indexOf'](cm[cE])===-0x1&&ce['push'](cm[cE]);}return ce;}});}}Co[Cy++]=KE,CZ++;}break;}case 0x94:{eC:{let cc=Co[--Cy],ce=Co[Cy-0x1],cm=Ck[KJ];vmL(ce,cm,{'get':cc,'enumerable':![],'configurable':!![]}),CZ++;}break;}}},KM=function(KY,KJ){switch(KY){case 0xff:{dh:{let Kh=KJ&0xffff,Kx=KJ>>>0x10,KQ=CR[Kh],KA=Ck[Kx];Co[Cy++]=KQ[KA],CZ++;}break;}case 0xfc:{dx:{let Ka=KJ&0xffff,KW=KJ>>>0x10;Co[Cy++]=CR[Ka]+Ck[KW],CZ++;}break;}case 0xda:{dQ:{let KP=Ck[KJ];!KT['_$6E2fiZ']['_$wQwr8G']&&(KT['_$6E2fiZ']['_$wQwr8G']=vml(null)),KT['_$6E2fiZ']['_$wQwr8G'][KP]=!![],CZ++;}break;}case 0xfe:{dA:{let Ks=KJ&0xffff,Kq=KJ>>>0x10;Co[Cy++]=CR[Ks]*Ck[Kq],CZ++;}break;}case 0x105:{da:{let Kf=CR[KJ]-0x1;CR[KJ]=Kf,Co[Cy++]=Kf,CZ++;}break;}case 0xd5:{dW:{Co[Cy++]=KT['_$6E2fiZ'],CZ++;}break;}case 0xd8:{dP:{let d0=Ck[KJ],d1=Co[--Cy],d2=KT['_$6E2fiZ'],d3=![];while(d2){if(d2['_$z7jO8h']&&d0 in d2['_$z7jO8h']){if(d2['_$DOFvHe']&&d0 in d2['_$DOFvHe'])break;d2['_$z7jO8h'][d0]=d1;!d2['_$DOFvHe']&&(d2['_$DOFvHe']=vml(null));d2['_$DOFvHe'][d0]=!![],d3=!![];break;}d2=d2['_$ANyjq7'];}!d3&&(C8(KT['_$6E2fiZ'],d0),!KT['_$6E2fiZ']['_$z7jO8h']&&(KT['_$6E2fiZ']['_$z7jO8h']=vml(null)),KT['_$6E2fiZ']['_$z7jO8h'][d0]=d1,!KT['_$6E2fiZ']['_$DOFvHe']&&(KT['_$6E2fiZ']['_$DOFvHe']=vml(null)),KT['_$6E2fiZ']['_$DOFvHe'][d0]=!![]),CZ++;}break;}case 0xdb:{ds:{let d4=Ck[KJ],d5=Co[--Cy],d6=KT['_$6E2fiZ']['_$ANyjq7'];d6&&(!d6['_$z7jO8h']&&(d6['_$z7jO8h']=vml(null)),d6['_$z7jO8h'][d4]=d5),CZ++;}break;}case 0xd9:{dq:{let d7=Ck[KJ],d8=Co[--Cy];C7(KT['_$6E2fiZ'],d7);if(!KT['_$6E2fiZ']['_$z7jO8h'])KT['_$6E2fiZ']['_$z7jO8h']=vml(null);KT['_$6E2fiZ']['_$z7jO8h'][d7]=d8,!KT['_$6E2fiZ']['_$DOFvHe']&&(KT['_$6E2fiZ']['_$DOFvHe']=vml(null)),KT['_$6E2fiZ']['_$DOFvHe'][d7]=!![],CZ++;}break;}case 0x100:{df:{let d9=KJ&0xffff,dC=KJ>>>0x10;Co[Cy++]=CR[d9]<Ck[dC],CZ++;}break;}case 0xd4:{X0:{let dK=Ck[KJ],dd=Co[--Cy],dX=KT['_$6E2fiZ'],dH=![];while(dX){let dc=dX['_$wQwr8G'],de=dX['_$z7jO8h'];if(dc&&dK in dc)throw new ReferenceError('Cannot\x20access\x20\x27'+dK+'\x27\x20before\x20initialization');if(de&&dK in de){if(dX['_$IlKMX6']&&dK in dX['_$IlKMX6']){if(KT['_$8Byizy'])throw new TypeError('Assignment\x20to\x20constant\x20variable.');dH=!![];break;}if(dX['_$DOFvHe']&&dK in dX['_$DOFvHe'])throw new TypeError('Assignment\x20to\x20constant\x20variable.');de[dK]=dd,dH=!![];break;}dX=dX['_$ANyjq7'];}if(!dH){if(dK in vmw_6b57e6)vmw_6b57e6[dK]=dd;else dK in vmr?vmr[dK]=dd:vmr[dK]=dd;}CZ++;}break;}case 0xfb:{X1:{CR[KJ]=CR[KJ]-0x1,CZ++;}break;}case 0x101:{X2:{let dm=KJ&0xffff,dw=KJ>>>0x10;CR[dm]<Ck[dw]?CZ=CY[CZ]:CZ++;}break;}case 0xd6:{X3:{KT['_$6E2fiZ']&&KT['_$6E2fiZ']['_$ANyjq7']&&(KT['_$6E2fiZ']=KT['_$6E2fiZ']['_$ANyjq7']),CZ++;}break;}case 0x102:{X4:{let dG=KJ&0xffff,dE=KJ>>>0x10,dr=Co[--Cy],di=C1(Kd,dr),dF=CR[dG],dL=Ck[dE],dl=dF[dL];Co[Cy++]=dl['apply'](dF,di),CZ++;}break;}case 0xdc:{X5:{let dU=Co[--Cy],du=Ck[KJ];if(KT['_$8Byizy']&&!(du in vmr)&&!(du in vmw_6b57e6))throw new ReferenceError(du+'\x20is\x20not\x20defined');vmw_6b57e6[du]=dU,vmr[du]=dU,Co[Cy++]=dU,CZ++;}break;}case 0xca:{X6:{return Kg=Cy>0x0?Co[--Cy]:undefined,0x1;}break;}case 0xfa:{X7:{CR[KJ]=CR[KJ]+0x1,CZ++;}break;}case 0xd7:{X8:{let dt=Ck[KJ],dD=Co[--Cy];C7(KT['_$6E2fiZ'],dt),!KT['_$6E2fiZ']['_$z7jO8h']&&(KT['_$6E2fiZ']['_$z7jO8h']=vml(null)),KT['_$6E2fiZ']['_$z7jO8h'][dt]=dD,CZ++;}break;}case 0xc9:{X9:{CZ++;}break;}case 0xc8:{XC:{debugger;CZ++;}break;}case 0xdd:{XK:{let dp=KJ&0xffff,dv=KJ>>>0x10,dn=Ck[dp],dV=KT['_$6E2fiZ'];for(let dT=0x0;dT<dv;dT++){dV=dV['_$ANyjq7'];}let db=dV['_$wQwr8G'];if(db&&dn in db)throw new ReferenceError('Cannot\x20access\x20\x27'+dn+'\x27\x20before\x20initialization');let dg=dV['_$z7jO8h'];Co[Cy++]=dg?dg[dn]:undefined,CZ++;}break;}case 0xd2:{Xd:{let dS=Co[--Cy],dj={['_$z7jO8h']:null,['_$DOFvHe']:null,['_$wQwr8G']:null,['_$ANyjq7']:dS};KT['_$6E2fiZ']=dj,CZ++;}break;}case 0x104:{XX:{let dO=CR[KJ]+0x1;CR[KJ]=dO,Co[Cy++]=dO,CZ++;}break;}case 0xd3:{XH:{let dM=Ck[KJ];if(dM==='__this__'){let dZ=KT['_$6E2fiZ'];while(dZ){if(dZ['_$wQwr8G']&&'__this__'in dZ['_$wQwr8G'])throw new ReferenceError('Cannot\x20access\x20\x27__this__\x27\x20before\x20initialization');if(dZ['_$z7jO8h']&&'__this__'in dZ['_$z7jO8h'])break;dZ=dZ['_$ANyjq7'];}Co[Cy++]=CI,CZ++;break XH;}let dB=KT['_$6E2fiZ'],dN,dI=![],dy=dM['indexOf']('$$'),dR=dy!==-0x1?dM['substring'](0x0,dy):null;while(dB){let dk=dB['_$wQwr8G'],dz=dB['_$z7jO8h'];if(dk&&dM in dk)throw new ReferenceError('Cannot\x20access\x20\x27'+dM+'\x27\x20before\x20initialization');if(dR&&dk&&dR in dk){if(!(dz&&dM in dz))throw new ReferenceError('Cannot\x20access\x20\x27'+dR+'\x27\x20before\x20initialization');}if(dz&&dM in dz){dN=dz[dM],dI=!![];break;}dB=dB['_$ANyjq7'];}!dI&&(dM in vmw_6b57e6?dN=vmw_6b57e6[dM]:dN=vmr[dM]),Co[Cy++]=dN,CZ++;}break;}case 0x103:{Xc:{CR[KJ]=Co[--Cy],CZ++;}break;}case 0xfd:{Xe:{let dY=KJ&0xffff,dJ=KJ>>>0x10;Co[Cy++]=CR[dY]-Ck[dJ],CZ++;}break;}}};switch(Ko){case 0x1c:{let KY=Co[--Cy];Co[Cy++]=typeof KY===W?KY:+KY,CZ++;continue;}case 0x0:{Co[Cy++]=Ck[KR],CZ++;continue;}case 0x6:{Co[Cy++]=CR[KR],CZ++;continue;}case 0x1:{Co[Cy++]=undefined,CZ++;continue;}case 0xa:{let KJ=Co[--Cy],Kh=Co[--Cy];Co[Cy++]=Kh+KJ,CZ++;continue;}case 0x46:{let Kx=Co[--Cy],KQ=Ck[KR];if(Kx===null||Kx===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(KQ)+'\x27\x20of\x20'+Kx);Co[Cy++]=Kx[KQ],CZ++;continue;}case 0x1b:{let KA=Co[Cy-0x3],Ka=Co[Cy-0x2],KW=Co[Cy-0x1];Co[Cy-0x3]=Ka,Co[Cy-0x2]=KW,Co[Cy-0x1]=KA,CZ++;continue;}case 0x34:{!Co[--Cy]?CZ=CY[CZ]:CZ++;continue;}case 0x3:{Co[--Cy],CZ++;continue;}case 0x49:{let KP=Co[--Cy],Ks=Co[--Cy],Kq=Co[--Cy];if(Kq===null||Kq===undefined)throw new TypeError('Cannot\x20set\x20property\x20\x27'+String(Ks)+'\x27\x20of\x20'+Kq);if(K4){if(!Reflect['set'](Kq,Ks,KP))throw new TypeError('Cannot\x20assign\x20to\x20read\x20only\x20property\x20\x27'+String(Ks)+'\x27\x20of\x20object');}else Kq[Ks]=KP;Co[Cy++]=KP,CZ++;continue;}case 0x7:{CR[KR]=Co[--Cy],CZ++;continue;}case 0x8:{Co[Cy++]=CO[KR],CZ++;continue;}case 0x4:{let Kf=Co[Cy-0x1];Co[Cy++]=Kf,CZ++;continue;}case 0x2e:{let d0=Co[--Cy],d1=Co[--Cy];Co[Cy++]=d1>d0,CZ++;continue;}case 0xdd:{let d2=KR&0xffff,d3=KR>>>0x10,d4=Ck[d2],d5=Kw;for(let d8=0x0;d8<d3;d8++){d5=d5['_$ANyjq7'];}let d6=d5['_$wQwr8G'];if(d6&&d4 in d6)throw new ReferenceError('Cannot\x20access\x20\x27'+d4+'\x27\x20before\x20initialization');let d7=d5['_$z7jO8h'];Co[Cy++]=d7?d7[d4]:undefined,CZ++;continue;}case 0x32:{CZ=CY[CZ];continue;}case 0x48:{let d9=Co[--Cy],dC=Co[--Cy];if(dC===null||dC===undefined)throw new TypeError('Cannot\x20read\x20property\x20\x27'+String(d9)+'\x27\x20of\x20'+dC);Co[Cy++]=dC[d9],CZ++;continue;}case 0x10:{let dK=Co[--Cy];Co[Cy++]=typeof dK===W?dK+0x1n:+dK+0x1,CZ++;continue;}case 0x2c:{let dd=Co[--Cy],dX=Co[--Cy];Co[Cy++]=dX<dd,CZ++;continue;}case 0xb:{let dH=Co[--Cy],dc=Co[--Cy];Co[Cy++]=dc-dH,CZ++;continue;}}KT=Kl;if(Ko<0x5a){if(Kj(Ko,KR)){if(KL>0x0){KS();continue;}return Kg;}}else{if(Ko<0xc8){if(KO(Ko,KR)){if(KL>0x0){KS();continue;}return Kg;}}else{if(KM(Ko,KR)){if(KL>0x0){KS();continue;}return Kg;}}}Kw=Kl['_$6E2fiZ'],Kr=Kl['_$zOetIH'];}break;}catch(de){if(CW&&CW['length']>0x0){let dm=CW[CW['length']-0x1];Cy=dm['_$nzrXHd'];if(dm['_$SjnB0a']!==undefined)KK(de),CZ=dm['_$SjnB0a'],dm['_$SjnB0a']=undefined,dm['_$zMeiLt']===undefined&&CW['pop']();else dm['_$zMeiLt']!==undefined?(CZ=dm['_$zMeiLt'],dm['_$AsWEq2']=de):(CZ=dm['_$SoNb8N'],CW['pop']());continue;}throw de;}}return Cy>0x0?Co[--Cy]:Kr?CI:undefined;}return KU(0x0);}function*Cb(Cj,CO,CM,CB,CN,CI){let Co=CV(Cj,CO,CM,CB,CN,CI);while(!![]){if(Co&&typeof Co==='object'&&Co['_$zLXXJC']!==undefined){let Cy=Co['_d'],CR;try{CR=yield Co;}catch(CZ){Co=Cy(0x2,CZ);continue;}CR&&typeof CR==='object'&&CR['_$zLXXJC']===x?Co=Cy(0x3,CR['_$iFxKZc']):Co=Cy(0x1,CR);}else return Co;}}let Cg=function(Cj,CO,CM,CB,CN,CI){vmw_6b57e6['_$j3JHuR']?vmw_6b57e6['_$j3JHuR']=![]:vmw_6b57e6['_$94L4k9']=undefined;let Co=CI===z?this:CI,Cy=typeof Cj==='object'?Cj:Z(Cj);return Cn(Cy,CO,CM,CB,CN,Co);},CT=async function(Cj,CO,CM,CB,CN,CI,Co){let Cy=Co===z?this:Co,CR=typeof Cj==='object'?Cj:Z(Cj),CZ=Cb(CR,CO,CM,CB,CN,Cy),Ck=CZ['next']();while(!Ck['done']){if(Ck['value']['_$zLXXJC']!==Y)throw new Error('Unexpected\x20yield\x20in\x20async\x20context');try{let Cz=await Promise['resolve'](Ck['value']['_$iFxKZc']);vmw_6b57e6['_$94L4k9']=CI,Ck=CZ['next'](Cz);}catch(CY){vmw_6b57e6['_$94L4k9']=CI,Ck=CZ['throw'](CY);}}return Ck['value'];},CS=function(Cj,CO,CM,CB,CN,CI){let Co=CI===z?this:CI,Cy=typeof Cj==='object'?Cj:Z(Cj),CR=Cb(Cy,CO,CM,CB,undefined,Co),CZ=![],Ck=null,Cz=undefined,CY=![];function CJ(CW,CP){if(CZ)return{'value':undefined,'done':!![]};vmw_6b57e6['_$94L4k9']=CN;if(Ck){let Cq;try{if(CP){if(typeof Ck['throw']==='function')Cq=Ck['throw'](CW);else{typeof Ck['return']==='function'&&Ck['return']();Ck=null;throw new TypeError('The\x20iterator\x20does\x20not\x20provide\x20a\x20\x27throw\x27\x20method.');}}else Cq=Ck['next'](CW);if(Cq!==null&&typeof Cq==='object'){}else{Ck=null;throw new TypeError('Iterator\x20result\x20'+Cq+'\x20is\x20not\x20an\x20object');}}catch(Cf){Ck=null;try{let K0=CR['throw'](Cf);return Ch(K0);}catch(K1){CZ=!![];throw K1;}}if(!Cq['done'])return{'value':Cq['value'],'done':![]};Ck=null,CW=Cq['value'],CP=![];}let Cs;try{Cs=CP?CR['throw'](CW):CR['next'](CW);}catch(K2){CZ=!![];throw K2;}return Ch(Cs);}function Ch(CW){if(CW['done']){CZ=!![];if(CY)return CY=![],{'value':Cz,'done':!![]};return{'value':CW['value'],'done':!![]};}let CP=CW['value'];if(CP['_$zLXXJC']===J)return{'value':CP['_$iFxKZc'],'done':![]};if(CP['_$zLXXJC']===h){let Cs=CP['_$iFxKZc'],Cq=Cs;Cq&&typeof Cq[Symbol['iterator']]==='function'&&(Cq=Cq[Symbol['iterator']]());if(Cq&&typeof Cq['next']==='function'){let Cf=Cq['next']();if(!Cf['done'])return Ck=Cq,{'value':Cf['value'],'done':![]};return CJ(Cf['value'],![]);}return CJ(undefined,![]);}throw new Error('Unexpected\x20signal\x20in\x20generator');}let Cx=Cy&&Cy[0x6],CQ=async function(CW){if(CZ)return{'value':CW,'done':!![]};if(Ck&&typeof Ck['return']==='function'){try{await Ck['return']();}catch(Cs){}Ck=null;}let CP;try{vmw_6b57e6['_$94L4k9']=CN,CP=CR['next']({['_$zLXXJC']:x,['_$iFxKZc']:CW});}catch(Cq){CZ=!![];throw Cq;}while(!CP['done']){let Cf=CP['value'];if(Cf['_$zLXXJC']===Y)try{let K0=await Promise['resolve'](Cf['_$iFxKZc']);vmw_6b57e6['_$94L4k9']=CN,CP=CR['next'](K0);}catch(K1){vmw_6b57e6['_$94L4k9']=CN,CP=CR['throw'](K1);}else{if(Cf['_$zLXXJC']===J)try{vmw_6b57e6['_$94L4k9']=CN,CP=CR['next']();}catch(K2){CZ=!![];throw K2;}else break;}}return CZ=!![],{'value':CP['value'],'done':!![]};},CA=function(CW){if(CZ)return{'value':CW,'done':!![]};if(Ck&&typeof Ck['return']==='function'){let Cs;try{Cs=Ck['return'](CW);if(Cs===null||typeof Cs!=='object')throw new TypeError('Iterator\x20result\x20'+Cs+'\x20is\x20not\x20an\x20object');}catch(Cq){Ck=null;let Cf;try{Cf=CR['throw'](Cq);}catch(K0){CZ=!![];throw K0;}return Ch(Cf);}if(!Cs['done'])return{'value':Cs['value'],'done':![]};Ck=null;}Cz=CW,CY=!![];let CP;try{vmw_6b57e6['_$94L4k9']=CN,CP=CR['next']({['_$zLXXJC']:x,['_$iFxKZc']:CW});}catch(K1){CZ=!![],CY=![];throw K1;}if(!CP['done']&&CP['value']&&CP['value']['_$zLXXJC']===J)return{'value':CP['value']['_$iFxKZc'],'done':![]};return CZ=!![],CY=![],{'value':CP['value'],'done':!![]};};if(Cx){let CW=async function(CP,Cs){if(CZ)return{'value':undefined,'done':!![]};vmw_6b57e6['_$94L4k9']=CN;if(Ck){let Cf;try{Cf=Cs?typeof Ck['throw']==='function'?await Ck['throw'](CP):(Ck=null,(function(){throw CP;}())):await Ck['next'](CP);}catch(K0){Ck=null;try{vmw_6b57e6['_$94L4k9']=CN;let K1=CR['throw'](K0);return await Ca(K1);}catch(K2){CZ=!![];throw K2;}}if(!Cf['done'])return{'value':Cf['value'],'done':![]};Ck=null,CP=Cf['value'],Cs=![];}let Cq;try{Cq=Cs?CR['throw'](CP):CR['next'](CP);}catch(K3){CZ=!![];throw K3;}return await Ca(Cq);};async function Ca(CP){while(!CP['done']){let Cs=CP['value'];if(Cs['_$zLXXJC']===Y){let Cq;try{Cq=await Promise['resolve'](Cs['_$iFxKZc']),vmw_6b57e6['_$94L4k9']=CN,CP=CR['next'](Cq);}catch(Cf){vmw_6b57e6['_$94L4k9']=CN,CP=CR['throw'](Cf);}continue;}if(Cs['_$zLXXJC']===J)return{'value':Cs['_$iFxKZc'],'done':![]};if(Cs['_$zLXXJC']===h){let K0=Cs['_$iFxKZc'],K1=K0;if(K1&&typeof K1[Symbol['asyncIterator']]==='function')K1=K1[Symbol['asyncIterator']]();else K1&&typeof K1[Symbol['iterator']]==='function'&&(K1=K1[Symbol['iterator']]());if(K1&&typeof K1['next']==='function'){let K2=await K1['next']();if(!K2['done'])return Ck=K1,{'value':K2['value'],'done':![]};vmw_6b57e6['_$94L4k9']=CN,CP=CR['next'](K2['value']);continue;}vmw_6b57e6['_$94L4k9']=CN,CP=CR['next'](undefined);continue;}throw new Error('Unexpected\x20signal\x20in\x20async\x20generator');}CZ=!![];if(CY)return CY=![],{'value':Cz,'done':!![]};return{'value':CP['value'],'done':!![]};}return{'next':function(CP){return CW(CP,![]);},'return':CQ,'throw':function(CP){if(CZ)return Promise['reject'](CP);return CW(CP,!![]);},[Symbol['asyncIterator']]:function(){return this;}};}else return{'next':function(CP){return CJ(CP,![]);},'return':CA,'throw':function(CP){if(CZ)throw CP;return CJ(CP,!![]);},[Symbol['iterator']]:function(){return this;}};};return function(Cj,CO,CM,CB,CN){let CI=Z(Cj);if(CI&&CI[0xa]){let Co=vmw_6b57e6['_$94L4k9'];return CS['call'](this,CI,CO,CM,CB,Co,z);}if(CI&&CI[0x6]){let Cy=vmw_6b57e6['_$94L4k9'];return CT['call'](this,CI,CO,CM,CB,CN,Cy,z);}if(CI&&CI[0x16]&&this===vmr)return Cg(CI,CO,CM,CB,CN,undefined);return Cg['call'](this,CI,CO,CM,CB,CN,z);};}());try{document,Object['defineProperty'](vmw_6b57e6,'document',{'get':function(){return document;},'set':function(C){document=C;},'configurable':!![]});}catch(vmcr){}try{alert,Object['defineProperty'](vmw_6b57e6,'alert',{'get':function(){return alert;},'set':function(C){alert=C;},'configurable':!![]});}catch(vmci){}try{Chart,Object['defineProperty'](vmw_6b57e6,'Chart',{'get':function(){return Chart;},'set':function(C){Chart=C;},'configurable':!![]});}catch(vmcF){}try{undefined,Object['defineProperty'](vmw_6b57e6,'undefined',{'get':function(){return undefined;},'set':function(C){undefined=C;},'configurable':!![]});}catch(vmcL){}try{Number,Object['defineProperty'](vmw_6b57e6,'Number',{'get':function(){return Number;},'set':function(C){Number=C;},'configurable':!![]});}catch(vmcl){}try{isNaN,Object['defineProperty'](vmw_6b57e6,'isNaN',{'get':function(){return isNaN;},'set':function(C){isNaN=C;},'configurable':!![]});}catch(vmcU){}try{Math,Object['defineProperty'](vmw_6b57e6,'Math',{'get':function(){return Math;},'set':function(C){Math=C;},'configurable':!![]});}catch(vmcu){}try{Date,Object['defineProperty'](vmw_6b57e6,'Date',{'get':function(){return Date;},'set':function(C){Date=C;},'configurable':!![]});}catch(vmct){}try{String,Object['defineProperty'](vmw_6b57e6,'String',{'get':function(){return String;},'set':function(C){String=C;},'configurable':!![]});}catch(vmcD){}try{fetch,Object['defineProperty'](vmw_6b57e6,'fetch',{'get':function(){return fetch;},'set':function(C){fetch=C;},'configurable':!![]});}catch(vmcp){}try{JSON,Object['defineProperty'](vmw_6b57e6,'JSON',{'get':function(){return JSON;},'set':function(C){JSON=C;},'configurable':!![]});}catch(vmcv){}try{console,Object['defineProperty'](vmw_6b57e6,'console',{'get':function(){return console;},'set':function(C){console=C;},'configurable':!![]});}catch(vmcn){}try{localStorage,Object['defineProperty'](vmw_6b57e6,'localStorage',{'get':function(){return localStorage;},'set':function(C){localStorage=C;},'configurable':!![]});}catch(vmcV){}try{isFinite,Object['defineProperty'](vmw_6b57e6,'isFinite',{'get':function(){return isFinite;},'set':function(C){isFinite=C;},'configurable':!![]});}catch(vmcb){}try{Array,Object['defineProperty'](vmw_6b57e6,'Array',{'get':function(){return Array;},'set':function(C){Array=C;},'configurable':!![]});}catch(vmcg){}try{Error,Object['defineProperty'](vmw_6b57e6,'Error',{'get':function(){return Error;},'set':function(C){Error=C;},'configurable':!![]});}catch(vmcT){}try{setTimeout,Object['defineProperty'](vmw_6b57e6,'setTimeout',{'get':function(){return setTimeout;},'set':function(C){setTimeout=C;},'configurable':!![]});}catch(vmcS){}try{confirm,Object['defineProperty'](vmw_6b57e6,'confirm',{'get':function(){return confirm;},'set':function(C){confirm=C;},'configurable':!![]});}catch(vmcj){}try{window,Object['defineProperty'](vmw_6b57e6,'window',{'get':function(){return window;},'set':function(C){window=C;},'configurable':!![]});}catch(vmcO){}try{Blob,Object['defineProperty'](vmw_6b57e6,'Blob',{'get':function(){return Blob;},'set':function(C){Blob=C;},'configurable':!![]});}catch(vmcM){}try{URL,Object['defineProperty'](vmw_6b57e6,'URL',{'get':function(){return URL;},'set':function(C){URL=C;},'configurable':!![]});}catch(vmcB){}vmw_6b57e6['exportExcel']=exportExcel;globalThis['exportExcel']=vmw_6b57e6['exportExcel'];vmw_6b57e6['renderHistory']=renderHistory;globalThis['renderHistory']=vmw_6b57e6['renderHistory'];vmw_6b57e6['loadHistoryEntry']=loadHistoryEntry;globalThis['loadHistoryEntry']=vmw_6b57e6['loadHistoryEntry'];vmw_6b57e6['clearAllHistory']=clearAllHistory;globalThis['clearAllHistory']=vmw_6b57e6['clearAllHistory'];vmw_6b57e6['deleteHistoryEntry']=deleteHistoryEntry;globalThis['deleteHistoryEntry']=vmw_6b57e6['deleteHistoryEntry'];vmw_6b57e6['skipSave']=skipSave;globalThis['skipSave']=vmw_6b57e6['skipSave'];vmw_6b57e6['saveNow']=saveNow;globalThis['saveNow']=vmw_6b57e6['saveNow'];vmw_6b57e6['confirmSave']=confirmSave;globalThis['confirmSave']=vmw_6b57e6['confirmSave'];vmw_6b57e6['dismissSave']=dismissSave;globalThis['dismissSave']=vmw_6b57e6['dismissSave'];vmw_6b57e6['showSaveDialog']=showSaveDialog;globalThis['showSaveDialog']=vmw_6b57e6['showSaveDialog'];vmw_6b57e6['saveHistory']=saveHistory;globalThis['saveHistory']=vmw_6b57e6['saveHistory'];vmw_6b57e6['getHistory']=getHistory;globalThis['getHistory']=vmw_6b57e6['getHistory'];vmw_6b57e6['clearCache']=clearCache;globalThis['clearCache']=vmw_6b57e6['clearCache'];vmw_6b57e6['switchTab']=switchTab;globalThis['switchTab']=vmw_6b57e6['switchTab'];vmw_6b57e6['loadAndRender']=loadAndRender;globalThis['loadAndRender']=vmw_6b57e6['loadAndRender'];vmw_6b57e6['drawDashCharts']=drawDashCharts;globalThis['drawDashCharts']=vmw_6b57e6['drawDashCharts'];vmw_6b57e6['buildTable']=buildTable;globalThis['buildTable']=vmw_6b57e6['buildTable'];vmw_6b57e6['colorize']=colorize;globalThis['colorize']=vmw_6b57e6['colorize'];vmw_6b57e6['parseRawPercent']=parseRawPercent;globalThis['parseRawPercent']=vmw_6b57e6['parseRawPercent'];vmw_6b57e6['parseRawNum']=parseRawNum;globalThis['parseRawNum']=vmw_6b57e6['parseRawNum'];vmw_6b57e6['formatPercentRaw']=formatPercentRaw;globalThis['formatPercentRaw']=vmw_6b57e6['formatPercentRaw'];vmw_6b57e6['formatNumberRaw']=formatNumberRaw;globalThis['formatNumberRaw']=vmw_6b57e6['formatNumberRaw'];vmw_6b57e6['parseCSV']=parseCSV;globalThis['parseCSV']=vmw_6b57e6['parseCSV'];vmw_6b57e6['updateLastTime']=updateLastTime;globalThis['updateLastTime']=vmw_6b57e6['updateLastTime'];vmw_6b57e6['setSource']=setSource;globalThis['setSource']=vmw_6b57e6['setSource'];vmw_6b57e6['drawCharts']=drawCharts;globalThis['drawCharts']=vmw_6b57e6['drawCharts'];vmw_6b57e6['render']=render;globalThis['render']=vmw_6b57e6['render'];vmw_6b57e6['send']=send;globalThis['send']=vmw_6b57e6['send'];vmw_6b57e6['getSaveDateString']=getSaveDateString;globalThis['getSaveDateString']=vmw_6b57e6['getSaveDateString'];vmw_6b57e6['formatDateDisplay']=formatDateDisplay;globalThis['formatDateDisplay']=vmw_6b57e6['formatDateDisplay'];vmw_6b57e6['formatPercentInt']=formatPercentInt;globalThis['formatPercentInt']=vmw_6b57e6['formatPercentInt'];vmw_6b57e6['formatPercent']=formatPercent;globalThis['formatPercent']=vmw_6b57e6['formatPercent'];vmw_6b57e6['formatNumber']=formatNumber;globalThis['formatNumber']=vmw_6b57e6['formatNumber'];vmw_6b57e6['switchMainTab']=switchMainTab;globalThis['switchMainTab']=vmw_6b57e6['switchMainTab'];vmw_6b57e6['checkLogin']=checkLogin;globalThis['checkLogin']=vmw_6b57e6['checkLogin'];vmw_6b57e6['_$RdLZg8']={'API_URL':!![],'pieChartInstance':!![],'barChartInstance':!![],'targetLinePlugin':!![],'CSV_URL':!![],'CACHE_TIME':!![],'tbodyTotal':!![],'tbodyV05':!![],'tbodyV0302':!![],'dashChart1':!![],'dashChart2':!![],'HISTORY_KEY':!![],'pendingSaveData':!![]};function checkLogin(){return vmH_a7f194['call'](this,0x2,Array['from'](arguments),undefined,undefined,new.target);}function switchMainTab(C,K){return vmH_a7f194['call'](this,0x4,Array['from'](arguments),undefined,undefined,new.target);}const API_URL='https://script.google.com/macros/s/AKfycbxoCS6gmq8Dlb4XkH5mC8v21CO24r-OYtceFDUOFrl1FVlA4IF_lEX1hrcxSWGyCEK0DA/exec';vmw_6b57e6['API_URL']=API_URL;globalThis['API_URL']=vmw_6b57e6['API_URL'];vmw_6b57e6['API_URL']=API_URL;globalThis['API_URL']=API_URL;delete vmw_6b57e6['_$RdLZg8']['API_URL'];let pieChartInstance=null;vmw_6b57e6['pieChartInstance']=pieChartInstance;globalThis['pieChartInstance']=vmw_6b57e6['pieChartInstance'];vmw_6b57e6['pieChartInstance']=pieChartInstance;globalThis['pieChartInstance']=pieChartInstance;delete vmw_6b57e6['_$RdLZg8']['pieChartInstance'];let barChartInstance=null;vmw_6b57e6['barChartInstance']=barChartInstance;globalThis['barChartInstance']=vmw_6b57e6['barChartInstance'];vmw_6b57e6['barChartInstance']=barChartInstance;globalThis['barChartInstance']=barChartInstance;delete vmw_6b57e6['_$RdLZg8']['barChartInstance'],Chart['defaults']['color']='#9aa0a6',Chart['defaults']['borderColor']='rgba(255,255,255,0.05)';function formatNumber(C){return vmH_a7f194['call'](this,0x5,Array['from'](arguments),undefined,undefined,new.target);}function formatPercent(C){return vmH_a7f194['call'](this,0x6,Array['from'](arguments),undefined,undefined,new.target);}function formatPercentInt(C){return vmH_a7f194['call'](this,0x7,Array['from'](arguments),undefined,undefined,new.target);}function formatDateDisplay(C,K){return vmH_a7f194['call'](this,0x8,Array['from'](arguments),undefined,undefined,new.target);}function getSaveDateString(){return vmH_a7f194['call'](this,0x9,Array['from'](arguments),undefined,undefined,new.target);}async function send(){return vmH_a7f194['call'](this,0xa,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({'API_URL':API_URL},{['render']:{'get':function(){return render;},'set':function(C){render=C;},'enumerable':!![]},['pendingSaveData']:{'get':function(){return pendingSaveData;},'set':function(C){pendingSaveData=C;},'enumerable':!![]}}),['_$DOFvHe']:{['API_URL']:!![]}},undefined,new.target);}function render(C){return vmH_a7f194['call'](this,0xb,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['formatNumber']:{'get':function(){return formatNumber;},'set':function(K){formatNumber=K;},'enumerable':!![]},['formatPercentInt']:{'get':function(){return formatPercentInt;},'set':function(K){formatPercentInt=K;},'enumerable':!![]},['formatPercent']:{'get':function(){return formatPercent;},'set':function(K){formatPercent=K;},'enumerable':!![]},['drawCharts']:{'get':function(){return drawCharts;},'set':function(K){drawCharts=K;},'enumerable':!![]}})},undefined,new.target);}const targetLinePlugin={'id':'targetLinePlugin','afterDatasetsDraw':C=>{return vmH_a7f194['call'](this,0xc,[C],undefined,undefined,undefined);}};vmw_6b57e6['targetLinePlugin']=targetLinePlugin;globalThis['targetLinePlugin']=vmw_6b57e6['targetLinePlugin'];vmw_6b57e6['targetLinePlugin']=targetLinePlugin;globalThis['targetLinePlugin']=targetLinePlugin;delete vmw_6b57e6['_$RdLZg8']['targetLinePlugin'];function drawCharts(C,K,d){return vmH_a7f194['call'](this,0xe,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({'targetLinePlugin':targetLinePlugin},{['pieChartInstance']:{'get':function(){return pieChartInstance;},'set':function(X){pieChartInstance=X;},'enumerable':!![]},['barChartInstance']:{'get':function(){return barChartInstance;},'set':function(X){barChartInstance=X;},'enumerable':!![]}}),['_$DOFvHe']:{['targetLinePlugin']:!![]}},undefined,new.target);}const CSV_URL='https://script.google.com/macros/s/AKfycbym6-UHtN8VE5Ht19B9Nscgxlw8LNpRu7cRF-GNMw_EGj79-SI2PzoIzkXCRvPahmAG0A/exec';vmw_6b57e6['CSV_URL']=CSV_URL;globalThis['CSV_URL']=vmw_6b57e6['CSV_URL'];vmw_6b57e6['CSV_URL']=CSV_URL;globalThis['CSV_URL']=CSV_URL;delete vmw_6b57e6['_$RdLZg8']['CSV_URL'];const CACHE_TIME=0x36ee80;vmw_6b57e6['CACHE_TIME']=CACHE_TIME;globalThis['CACHE_TIME']=vmw_6b57e6['CACHE_TIME'];vmw_6b57e6['CACHE_TIME']=CACHE_TIME;globalThis['CACHE_TIME']=CACHE_TIME;delete vmw_6b57e6['_$RdLZg8']['CACHE_TIME'];const tbodyTotal=document['getElementById']('tbody-total');vmw_6b57e6['tbodyTotal']=tbodyTotal;globalThis['tbodyTotal']=vmw_6b57e6['tbodyTotal'];vmw_6b57e6['tbodyTotal']=tbodyTotal;globalThis['tbodyTotal']=tbodyTotal;delete vmw_6b57e6['_$RdLZg8']['tbodyTotal'];const tbodyV05=document['getElementById']('tbody-v05');vmw_6b57e6['tbodyV05']=tbodyV05;globalThis['tbodyV05']=vmw_6b57e6['tbodyV05'];vmw_6b57e6['tbodyV05']=tbodyV05;globalThis['tbodyV05']=tbodyV05;delete vmw_6b57e6['_$RdLZg8']['tbodyV05'];const tbodyV0302=document['getElementById']('tbody-v0302');vmw_6b57e6['tbodyV0302']=tbodyV0302;globalThis['tbodyV0302']=vmw_6b57e6['tbodyV0302'];vmw_6b57e6['tbodyV0302']=tbodyV0302;globalThis['tbodyV0302']=tbodyV0302;delete vmw_6b57e6['_$RdLZg8']['tbodyV0302'];let dashChart1=null;vmw_6b57e6['dashChart1']=dashChart1;globalThis['dashChart1']=vmw_6b57e6['dashChart1'];vmw_6b57e6['dashChart1']=dashChart1;globalThis['dashChart1']=dashChart1;delete vmw_6b57e6['_$RdLZg8']['dashChart1'];let dashChart2=null;vmw_6b57e6['dashChart2']=dashChart2;globalThis['dashChart2']=vmw_6b57e6['dashChart2'];vmw_6b57e6['dashChart2']=dashChart2;globalThis['dashChart2']=dashChart2;delete vmw_6b57e6['_$RdLZg8']['dashChart2'];function setSource(C){return vmH_a7f194['call'](this,0xf,Array['from'](arguments),undefined,undefined,new.target);}function updateLastTime(){return vmH_a7f194['call'](this,0x10,Array['from'](arguments),undefined,undefined,new.target);}function parseCSV(C){return vmH_a7f194['call'](this,0x11,Array['from'](arguments),undefined,undefined,new.target);}function formatNumberRaw(C){return vmH_a7f194['call'](this,0x12,Array['from'](arguments),undefined,undefined,new.target);}function formatPercentRaw(C){return vmH_a7f194['call'](this,0x13,Array['from'](arguments),undefined,undefined,new.target);}function parseRawNum(C){return vmH_a7f194['call'](this,0x14,Array['from'](arguments),undefined,undefined,new.target);}function parseRawPercent(C){return vmH_a7f194['call'](this,0x15,Array['from'](arguments),undefined,undefined,new.target);}function colorize(C,K){return vmH_a7f194['call'](this,0x16,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['formatPercentRaw']:{'get':function(){return formatPercentRaw;},'set':function(d){formatPercentRaw=d;},'enumerable':!![]}})},undefined,new.target);}function buildTable(C){return vmH_a7f194['call'](this,0x18,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({'tbodyTotal':tbodyTotal,'tbodyV05':tbodyV05,'tbodyV0302':tbodyV0302},{['formatNumberRaw']:{'get':function(){return formatNumberRaw;},'set':function(K){formatNumberRaw=K;},'enumerable':!![]},['colorize']:{'get':function(){return colorize;},'set':function(K){colorize=K;},'enumerable':!![]},['parseRawNum']:{'get':function(){return parseRawNum;},'set':function(K){parseRawNum=K;},'enumerable':!![]},['parseRawPercent']:{'get':function(){return parseRawPercent;},'set':function(K){parseRawPercent=K;},'enumerable':!![]},['drawDashCharts']:{'get':function(){return drawDashCharts;},'set':function(K){drawDashCharts=K;},'enumerable':!![]}}),['_$DOFvHe']:{['tbodyTotal']:!![],['tbodyV05']:!![],['tbodyV0302']:!![]}},undefined,new.target);}function drawDashCharts(C,K,d,X,H,c){return vmH_a7f194['call'](this,0x1a,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['dashChart1']:{'get':function(){return dashChart1;},'set':function(m){dashChart1=m;},'enumerable':!![]},['dashChart2']:{'get':function(){return dashChart2;},'set':function(m){dashChart2=m;},'enumerable':!![]}})},undefined,new.target);}async function loadAndRender(){return vmH_a7f194['call'](this,0x1b,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({'CACHE_TIME':CACHE_TIME,'CSV_URL':CSV_URL},{['parseCSV']:{'get':function(){return parseCSV;},'set':function(C){parseCSV=C;},'enumerable':!![]},['buildTable']:{'get':function(){return buildTable;},'set':function(C){buildTable=C;},'enumerable':!![]},['updateLastTime']:{'get':function(){return updateLastTime;},'set':function(C){updateLastTime=C;},'enumerable':!![]},['setSource']:{'get':function(){return setSource;},'set':function(C){setSource=C;},'enumerable':!![]}}),['_$DOFvHe']:{['CACHE_TIME']:!![],['CSV_URL']:!![]}},undefined,new.target);}function switchTab(C,K){return vmH_a7f194['call'](this,0x1d,Array['from'](arguments),undefined,undefined,new.target);}function clearCache(){return vmH_a7f194['call'](this,0x1e,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['loadAndRender']:{'get':function(){return loadAndRender;},'set':function(C){loadAndRender=C;},'enumerable':!![]}})},undefined,new.target);}loadAndRender();const HISTORY_KEY='frp_search_history';vmw_6b57e6['HISTORY_KEY']=HISTORY_KEY;globalThis['HISTORY_KEY']=vmw_6b57e6['HISTORY_KEY'];vmw_6b57e6['HISTORY_KEY']=HISTORY_KEY;globalThis['HISTORY_KEY']=HISTORY_KEY;delete vmw_6b57e6['_$RdLZg8']['HISTORY_KEY'];let pendingSaveData=null;vmw_6b57e6['pendingSaveData']=pendingSaveData;globalThis['pendingSaveData']=vmw_6b57e6['pendingSaveData'];vmw_6b57e6['pendingSaveData']=pendingSaveData;globalThis['pendingSaveData']=pendingSaveData;delete vmw_6b57e6['_$RdLZg8']['pendingSaveData'];function getHistory(){return vmH_a7f194['call'](this,0x1f,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:{'HISTORY_KEY':HISTORY_KEY},['_$DOFvHe']:{['HISTORY_KEY']:!![]}},undefined,new.target);}function saveHistory(C){return vmH_a7f194['call'](this,0x20,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:{'HISTORY_KEY':HISTORY_KEY},['_$DOFvHe']:{['HISTORY_KEY']:!![]}},undefined,new.target);}function showSaveDialog(C){return vmH_a7f194['call'](this,0x22,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['pendingSaveData']:{'get':function(){return pendingSaveData;},'set':function(K){pendingSaveData=K;},'enumerable':!![]}})},undefined,new.target);}function dismissSave(){return vmH_a7f194['call'](this,0x23,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['pendingSaveData']:{'get':function(){return pendingSaveData;},'set':function(C){pendingSaveData=C;},'enumerable':!![]}})},undefined,new.target);}function confirmSave(){return vmH_a7f194['call'](this,0x24,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['pendingSaveData']:{'get':function(){return pendingSaveData;},'set':function(C){pendingSaveData=C;},'enumerable':!![]},['getHistory']:{'get':function(){return getHistory;},'set':function(C){getHistory=C;},'enumerable':!![]},['getSaveDateString']:{'get':function(){return getSaveDateString;},'set':function(C){getSaveDateString=C;},'enumerable':!![]},['saveHistory']:{'get':function(){return saveHistory;},'set':function(C){saveHistory=C;},'enumerable':!![]},['dismissSave']:{'get':function(){return dismissSave;},'set':function(C){dismissSave=C;},'enumerable':!![]},['renderHistory']:{'get':function(){return renderHistory;},'set':function(C){renderHistory=C;},'enumerable':!![]}})},undefined,new.target);}function saveNow(){return vmH_a7f194['call'](this,0x25,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['pendingSaveData']:{'get':function(){return pendingSaveData;},'set':function(C){pendingSaveData=C;},'enumerable':!![]},['getHistory']:{'get':function(){return getHistory;},'set':function(C){getHistory=C;},'enumerable':!![]},['getSaveDateString']:{'get':function(){return getSaveDateString;},'set':function(C){getSaveDateString=C;},'enumerable':!![]},['saveHistory']:{'get':function(){return saveHistory;},'set':function(C){saveHistory=C;},'enumerable':!![]},['renderHistory']:{'get':function(){return renderHistory;},'set':function(C){renderHistory=C;},'enumerable':!![]}})},undefined,new.target);}function skipSave(){return vmH_a7f194['call'](this,0x26,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['pendingSaveData']:{'get':function(){return pendingSaveData;},'set':function(C){pendingSaveData=C;},'enumerable':!![]}})},undefined,new.target);}function deleteHistoryEntry(C){return vmH_a7f194['call'](this,0x28,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['getHistory']:{'get':function(){return getHistory;},'set':function(K){getHistory=K;},'enumerable':!![]},['saveHistory']:{'get':function(){return saveHistory;},'set':function(K){saveHistory=K;},'enumerable':!![]},['renderHistory']:{'get':function(){return renderHistory;},'set':function(K){renderHistory=K;},'enumerable':!![]}})},undefined,new.target);}function clearAllHistory(){return vmH_a7f194['call'](this,0x29,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['saveHistory']:{'get':function(){return saveHistory;},'set':function(C){saveHistory=C;},'enumerable':!![]},['renderHistory']:{'get':function(){return renderHistory;},'set':function(C){renderHistory=C;},'enumerable':!![]}})},undefined,new.target);}function loadHistoryEntry(C){return vmH_a7f194['call'](this,0x2b,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['getHistory']:{'get':function(){return getHistory;},'set':function(K){getHistory=K;},'enumerable':!![]},['render']:{'get':function(){return render;},'set':function(K){render=K;},'enumerable':!![]}})},undefined,new.target);}function renderHistory(){return vmH_a7f194['call'](this,0x2d,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['getHistory']:{'get':function(){return getHistory;},'set':function(C){getHistory=C;},'enumerable':!![]},['formatDateDisplay']:{'get':function(){return formatDateDisplay;},'set':function(C){formatDateDisplay=C;},'enumerable':!![]},['formatNumber']:{'get':function(){return formatNumber;},'set':function(C){formatNumber=C;},'enumerable':!![]}})},undefined,new.target);}function exportExcel(){return vmH_a7f194['call'](this,0x2f,Array['from'](arguments),{['_$ANyjq7']:undefined,['_$z7jO8h']:Object['defineProperties']({},{['getHistory']:{'get':function(){return getHistory;},'set':function(C){getHistory=C;},'enumerable':!![]}})},undefined,new.target);}renderHistory();
-  </script>
+  if (pass === "4101") {
+    alert("Welcome Back Nhat Van");
+    overlay.style.display = "none";
+    document.getElementById('main-nav-bar').style.display = "flex";
+    adminEls.forEach(el => el.style.display = "block");
+  } else if (pass === "6840") {
+    alert("Truy cập Dashboard 2026");
+    overlay.style.display = "none";
+    document.getElementById('view-search').style.display = 'none';
+    document.getElementById('view-dashboard').style.display = 'block';
+    adminEls.forEach(el => el.style.display = "none");
+  } else {
+    error.style.display = "block";
+    document.getElementById('pass-input').value = "";
+  }
+}
+
+// =========================================
+// MAIN TAB SWITCHING
+// =========================================
+function switchMainTab(viewId, btn) {
+  ['view-search','view-dashboard'].forEach(id => document.getElementById(id).style.display = 'none');
+  document.getElementById(viewId).style.display = 'block';
+  document.querySelectorAll('.main-tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// =========================================
+// FRP SEARCH
+// =========================================
+const API_URL = "https://script.google.com/macros/s/AKfycbxoCS6gmq8Dlb4XkH5mC8v21CO24r-OYtceFDUOFrl1FVlA4IF_lEX1hrcxSWGyCEK0DA/exec";
+let pieChartInstance = null, barChartInstance = null;
+let pendingSaveData = null;
+
+Chart.defaults.color = '#9aa0a6';
+Chart.defaults.borderColor = 'rgba(255,255,255,0.05)';
+
+// --- Format helpers ---
+function formatNumber(val) {
+  if (val == null || val === "") return "-";
+  const num = Number(val);
+  return isNaN(num) ? val : num.toLocaleString('en-US', { maximumFractionDigits: 2 });
+}
+function formatPercent(val) {
+  if (val == null || val === "") return "-";
+  const num = Number(val);
+  return isNaN(num) ? val : (num * 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + "%";
+}
+function formatPercentInt(val) {
+  if (val == null || val === "") return "-";
+  const num = Number(val);
+  return isNaN(num) ? val : Math.round(num * 100).toLocaleString('en-US') + "%";
+}
+function formatDateDisplay(dateStr, shift) {
+  if (!dateStr) return "-";
+  const d = new Date(dateStr);
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  return `${dd}-${mm}-${d.getFullYear()}<br><span style="font-size:11px;color:var(--muted);">Shift: ${shift}</span>`;
+}
+function getSaveDateString() {
+  const d = new Date();
+  return String(d.getDate()).padStart(2,'0') + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + d.getFullYear();
+}
+
+// --- API call ---
+async function send() {
+  const btn = document.getElementById("calcBtn");
+  btn.innerText = "Loading..."; btn.disabled = true;
+  try {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      body: JSON.stringify({
+        startDate: document.getElementById("start").value,
+        startShift: document.getElementById("shift1").value,
+        endDate: document.getElementById("end").value,
+        endShift: document.getElementById("shift2").value,
+        line: document.getElementById("line").value
+      })
+    });
+    const data = await res.json();
+    render(data);
+    pendingSaveData = data;
+    document.getElementById("saveAction").style.display = "block";
+  } catch (err) {
+    alert("Error fetching data!");
+    console.error(err);
+  } finally {
+    btn.innerText = "Calculate Data"; btn.disabled = false;
+  }
+}
+
+function render(d) {
+  const aGradeVal = Number(d.agrade) * 100;
+  const wastePercVal = Number(d.wastePercent) * 100;
+  const aGradeClass = aGradeVal < 99 ? "text-danger" : "text-accent";
+  const wasteClass = wastePercVal > 5.3 ? "text-danger" : "text-accent";
+
+  document.getElementById("output").innerHTML = `
+    <div class="card"><div class="card-label">Material (kg)</div><div class="card-value">${formatNumber(d.material)}</div></div>
+    <div class="card"><div class="card-label">Additives (kg)</div><div class="card-value">${formatNumber(d.additives)}</div></div>
+    <div class="card"><div class="card-label">Input (kg)</div><div class="card-value">${formatNumber(d.input)}</div></div>
+    <div class="card"><div class="card-label">Q (Qualified)</div><div class="card-value text-accent">${formatNumber(d.q)}</div></div>
+    <div class="card"><div class="card-label">UQ (Unqualified)</div><div class="card-value text-danger">${formatNumber(d.uq)}</div></div>
+    <div class="card"><div class="card-label">Waste (kg)</div><div class="card-value text-danger">${formatNumber(d.waste)}</div></div>
+    <div class="card"><div class="card-label">Throughput (kg/h)</div><div class="card-value">${formatNumber(d.throughput)}</div></div>
+    <div class="card"><div class="card-label">A-grade</div><div class="card-value ${aGradeClass}">${formatPercentInt(d.agrade)}</div></div>
+    <div class="card"><div class="card-label">Waste %</div><div class="card-value ${wasteClass}">${formatPercent(d.wastePercent)}</div></div>
+    <div class="card"><div class="card-label">Productivity</div><div class="card-value">${formatPercent(d.productivity)}</div></div>
+  `;
+  document.getElementById("chartsContainer").style.display = "flex";
+  drawCharts(d, aGradeVal, wastePercVal);
+}
+
+// --- Charts (FRP Search) ---
+// Plugin chỉ dùng cho bar chart — KHÔNG register global (tránh crash doughnut)
+const targetLinePlugin = {
+  id: 'targetLinePlugin',
+  afterDatasetsDraw(chart) {
+    const yAxis = chart.scales && chart.scales.y;
+    if (!yAxis) return;
+    const meta = chart.getDatasetMeta(0);
+    if (!meta || !meta.data || !meta.data.length) return;
+    const ctx = chart.ctx;
+    ctx.save();
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 4]);
+    [{ bar: meta.data[0], val: 99,  label: '99%'  },
+     { bar: meta.data[1], val: 5.3, label: '5.3%' }].forEach(({ bar, val, label }) => {
+      if (!bar) return;
+      const yPx = yAxis.getPixelForValue(val);
+      const x1 = bar.x - bar.width / 2 - 5;
+      const x2 = bar.x + bar.width / 2 + 5;
+      ctx.strokeStyle = '#fbbf24';
+      ctx.beginPath(); ctx.moveTo(x1, yPx); ctx.lineTo(x2, yPx); ctx.stroke();
+      ctx.fillStyle = '#fbbf24'; ctx.font = '10px Arial';
+      ctx.fillText(label, x2 + 3, yPx + 3);
+    });
+    ctx.restore();
+  }
+};
+
+function drawCharts(d, aGradeVal, wastePercVal) {
+  if (pieChartInstance) pieChartInstance.destroy();
+  if (barChartInstance) barChartInstance.destroy();
+
+  pieChartInstance = new Chart(document.getElementById("pieChart").getContext("2d"), {
+    type: 'doughnut',
+    data: {
+      labels: ['Qualified (Q)', 'Waste'],
+      datasets: [{ data: [Number(d.q), Number(d.waste)], backgroundColor: ['#00ff9c','#ff4d4d'], borderWidth: 0, hoverOffset: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  barChartInstance = new Chart(document.getElementById("barChart").getContext("2d"), {
+    type: 'bar',
+    data: {
+      labels: ['A-grade', 'Waste %', 'Productivity'],
+      datasets: [{
+        label: 'Percentage (%)',
+        data: [aGradeVal, wastePercVal, Number(d.productivity) * 100],
+        backgroundColor: [
+          aGradeVal < 99     ? '#ff4d4d' : '#00ff9c',
+          wastePercVal > 5.3 ? '#ff4d4d' : '#00ff9c',
+          '#3b82f6'
+        ],
+        borderRadius: 4
+      }]
+    },
+    plugins: [targetLinePlugin],
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: true, ticks: { callback: v => v + "%" } } }
+    }
+  });
+}
+
+// =========================================
+// DASHBOARD 2026
+// =========================================
+const CSV_URL = "https://script.google.com/macros/s/AKfycbym6-UHtN8VE5Ht19B9Nscgxlw8LNpRu7cRF-GNMw_EGj79-SI2PzoIzkXCRvPahmAG0A/exec";
+const CACHE_TIME = 3600000;
+const tbodyTotal = document.getElementById("tbody-total");
+const tbodyV05   = document.getElementById("tbody-v05");
+const tbodyV0302 = document.getElementById("tbody-v0302");
+let dashChart1 = null, dashChart2 = null;
+
+function setSource(type) { document.getElementById("data-source").innerText = "Data source: " + type; }
+function updateLastTime() {
+  const t = localStorage.getItem("frp_csv_cache_time");
+  if (!t) return;
+  document.getElementById("last-update").innerText = "Last updated: " + new Date(Number(t)).toLocaleString();
+}
+
+function parseCSV(text) {
+  const rows = []; let cur = "", row = []; let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === '"') {
+      if (inQ && text[i+1] === '"') { cur += '"'; i++; } else { inQ = !inQ; }
+      continue;
+    }
+    if (!inQ && ch === ',') { row.push(cur); cur = ""; continue; }
+    if (!inQ && (ch === '\n' || ch === '\r')) {
+      if (ch === '\r' && text[i+1] === '\n') continue;
+      row.push(cur); rows.push(row); row = []; cur = ""; continue;
+    }
+    cur += ch;
+  }
+  if (cur !== "" || row.length > 0) { row.push(cur); rows.push(row); }
+  return rows;
+}
+
+function formatNumberRaw(v) {
+  if (v == null) return "-";
+  v = String(v).trim();
+  if (!v || v === "-" || v === " - " || v === "–") return "-";
+  const n = Number(v.replace(/,/g,'').replace(/\s/g,''));
+  return isFinite(n) ? n.toLocaleString('en-US', { maximumFractionDigits: n%1 !== 0 ? 2 : 0 }) : v;
+}
+
+function formatPercentRaw(v) {
+  if (v == null) return "-";
+  v = String(v).trim();
+  if (!v || v === "-" || v === " - " || v === "–") return "-";
+  const n = Number(v.replace(/,/g,'').replace(/%/g,'').replace(/\s/g,''));
+  if (isFinite(n)) return (Math.round(n*100)/100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }) + "%";
+  return v.endsWith('%') ? v : v;
+}
+
+function parseRawNum(v) {
+  if (!v) return null;
+  const n = Number(String(v).replace(/,/g,'').replace(/\s/g,''));
+  return isNaN(n) ? null : n;
+}
+
+function parseRawPercent(v) {
+  if (!v) return null;
+  const n = Number(String(v).replace(/,/g,'').replace(/%/g,'').replace(/\s/g,''));
+  return isNaN(n) ? null : n;
+}
+
+function colorize(val, type) {
+  const num = Number(String(val).replace(/,/g,'').replace('%',''));
+  if (type === "waste" && num > 5.3) return `<span class="text-danger">${formatPercentRaw(val)}</span>`;
+  if (type === "grade" && num < 99)  return `<span class="text-danger">${formatPercentRaw(val)}</span>`;
+  return formatPercentRaw(val);
+}
+
+function buildTable(rows) {
+  if (!rows || rows.length < 2) {
+    tbodyTotal.innerHTML = '<tr><td colspan="7">No data</td></tr>'; return;
+  }
+
+  const months = new Array(13).fill(null);
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    if (!r || !r.length) continue;
+    const rawMonth = (r[0] || "").trim();
+    if (!rawMonth) continue;
+    const m = Number((rawMonth.match(/\.([0-9]{1,2})$/) || [])[1]);
+    if (m >= 1 && m <= 12) months[m] = r;
+  }
+
+  let outTotal = "", outV05 = "", outV03 = "";
+  const labels = [], qData = [], uqData = [], wasteData = [], aGradeData = [], wastePercData = [];
+
+  for (let m = 1; m <= 12; m++) {
+    labels.push("Month " + m);
+    const row = months[m];
+    if (!row) {
+      const empty = `<tr><td class="col-month">${m}</td><td colspan="6">-</td></tr>`;
+      outTotal += empty; outV05 += empty; outV03 += empty;
+      qData.push(null); uqData.push(null); wasteData.push(null);
+      aGradeData.push(null); wastePercData.push(null);
+    } else {
+      const n = (i) => `<td class="col-num">${formatNumberRaw(row[i])}</td>`;
+      const p = (i, t) => `<td class="col-num">${colorize(row[i], t)}</td>`;
+      const mc = `<td class="col-month">${m}</td>`;
+      outTotal += `<tr>${mc}${n(1)}${n(2)}${n(3)}${p(4,'grade')}${n(5)}${p(6,'waste')}</tr>`;
+      outV05   += `<tr>${mc}${n(7)}${n(8)}${n(9)}${p(10,'grade')}${n(11)}${p(12,'waste')}</tr>`;
+      outV03   += `<tr>${mc}${n(13)}${n(14)}${n(15)}${p(16,'grade')}${n(17)}${p(18,'waste')}</tr>`;
+      qData.push(parseRawNum(row[1]));
+      uqData.push(parseRawNum(row[2]));
+      wasteData.push(parseRawNum(row[5]));
+      aGradeData.push(parseRawPercent(row[4]));
+      wastePercData.push(parseRawPercent(row[6]));
+    }
+  }
+
+  tbodyTotal.innerHTML = outTotal;
+  tbodyV05.innerHTML   = outV05;
+  tbodyV0302.innerHTML = outV03;
+
+  const totalRow = rows.find(r => r && /total/i.test((r[0] || "").trim()));
+  if (totalRow) {
+    const n = (i) => `<td class="col-num">${formatNumberRaw(totalRow[i])}</td>`;
+    const p = (i, t) => `<td class="col-num">${colorize(totalRow[i], t)}</td>`;
+    const tc = `<td>Total</td>`;
+    tbodyTotal.innerHTML += `<tr class="total">${tc}${n(1)}${n(2)}${n(3)}${p(4,'grade')}${n(5)}${p(6,'waste')}</tr>`;
+    tbodyV05.innerHTML   += `<tr class="total">${tc}${n(7)}${n(8)}${n(9)}${p(10,'grade')}${n(11)}${p(12,'waste')}</tr>`;
+    tbodyV0302.innerHTML += `<tr class="total">${tc}${n(13)}${n(14)}${n(15)}${p(16,'grade')}${n(17)}${p(18,'waste')}</tr>`;
+  }
+
+  drawDashCharts(labels, qData, uqData, wasteData, aGradeData, wastePercData);
+}
+
+const CHART_SCALE_OPTS = {
+  x: { ticks: { color: '#9aa0a6' }, grid: { color: 'rgba(255,255,255,0.05)' } },
+  y: { ticks: { color: '#9aa0a6' }, grid: { color: 'rgba(255,255,255,0.05)' }, beginAtZero: true }
+};
+
+function drawDashCharts(labels, q, uq, waste, agrade, wasteperc) {
+  document.getElementById("dashChartsContainer").style.display = "flex";
+  if (dashChart1) dashChart1.destroy();
+  if (dashChart2) dashChart2.destroy();
+
+  dashChart1 = new Chart(document.getElementById("dashLineChart1").getContext("2d"), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Total Q (kg)',     data: q,     borderColor: '#00ff9c', backgroundColor: '#00ff9c', tension: 0.3, pointRadius: 4 },
+        { label: 'Total UQ (kg)',    data: uq,    borderColor: '#ff4d4d', backgroundColor: '#ff4d4d', tension: 0.3, pointRadius: 4 },
+        { label: 'Total Waste (kg)', data: waste, borderColor: '#fbbf24', backgroundColor: '#fbbf24', tension: 0.3, pointRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { title: { display: true, text: 'Total Q, UQ & Waste Trend', color: '#fff', font: { size: 16 } }, legend: { labels: { color: '#9aa0a6' } } },
+      scales: CHART_SCALE_OPTS
+    }
+  });
+
+  dashChart2 = new Chart(document.getElementById("dashLineChart2").getContext("2d"), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'A-grade (%)', data: agrade,    borderColor: '#00ff9c', backgroundColor: '#00ff9c', tension: 0.3, pointRadius: 4 },
+        { label: 'Waste (%)',   data: wasteperc, borderColor: '#ff4d4d', backgroundColor: '#ff4d4d', tension: 0.3, pointRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { title: { display: true, text: 'A-grade & Waste % Trend', color: '#fff', font: { size: 16 } }, legend: { labels: { color: '#9aa0a6' } } },
+      scales: {
+        x: CHART_SCALE_OPTS.x,
+        y: { ...CHART_SCALE_OPTS.y, ticks: { color: '#9aa0a6', callback: v => v + "%" } }
+      }
+    }
+  });
+}
+
+async function loadAndRender() {
+  try {
+    const cached = localStorage.getItem("frp_csv_cache");
+    const cacheTime = localStorage.getItem("frp_csv_cache_time");
+    if (cached && cacheTime && (Date.now() - cacheTime < CACHE_TIME)) {
+      buildTable(parseCSV(cached)); updateLastTime(); setSource("CACHE"); return;
+    }
+    const r = await fetch(CSV_URL);
+    if (!r.ok) throw new Error("Network error " + r.status);
+    const txt = await r.text();
+    localStorage.setItem("frp_csv_cache", txt);
+    localStorage.setItem("frp_csv_cache_time", Date.now());
+    buildTable(parseCSV(txt)); updateLastTime(); setSource("LIVE");
+  } catch(err) { console.error(err); }
+}
+
+function switchDashTab(tab, e) {
+  ['total','v05','v0302'].forEach(t => document.getElementById("table-" + t).style.display = "none");
+  document.getElementById("table-" + tab).style.display = "table";
+  document.querySelectorAll(".dash-tab-btn").forEach(b => b.classList.remove("active"));
+  if (e) e.target.classList.add("active");
+}
+
+function clearCache() {
+  localStorage.removeItem("frp_csv_cache");
+  localStorage.removeItem("frp_csv_cache_time");
+  loadAndRender();
+}
+
+loadAndRender();
+
+// =========================================
+// SEARCH HISTORY & EXPORT
+// =========================================
+const HISTORY_KEY = "frp_search_history";
+
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]"); } catch(e) { return []; }
+}
+function saveHistory(arr) { localStorage.setItem(HISTORY_KEY, JSON.stringify(arr)); }
+
+function saveNow() {
+  if (!pendingSaveData) return;
+  const history = getHistory();
+  history.unshift({
+    id: Date.now(),
+    savedAt: getSaveDateString(),
+    note: document.getElementById("quickNote").value.trim(),
+    params: {
+      startDate:  document.getElementById("start").value,
+      startShift: document.getElementById("shift1").value,
+      endDate:    document.getElementById("end").value,
+      endShift:   document.getElementById("shift2").value,
+      line:       document.getElementById("line").value
+    },
+    data: pendingSaveData
+  });
+  saveHistory(history);
+  pendingSaveData = null;
+  document.getElementById("saveAction").style.display = "none";
+  document.getElementById("quickNote").value = "";
+  renderHistory();
+}
+
+function skipSave() {
+  pendingSaveData = null;
+  document.getElementById("saveAction").style.display = "none";
+}
+
+function deleteHistoryEntry(id) {
+  saveHistory(getHistory().filter(e => e.id !== id));
+  renderHistory();
+}
+
+function clearAllHistory() {
+  if (!confirm("Clear all search history?")) return;
+  saveHistory([]); renderHistory();
+}
+
+function loadHistoryEntry(id) {
+  const entry = getHistory().find(e => e.id === id);
+  if (!entry) return;
+  document.getElementById("start").value   = entry.params.startDate;
+  document.getElementById("shift1").value  = entry.params.startShift;
+  document.getElementById("end").value     = entry.params.endDate;
+  document.getElementById("shift2").value  = entry.params.endShift;
+  document.getElementById("line").value    = entry.params.line;
+  render(entry.data);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function renderHistory() {
+  const history = getHistory();
+  document.getElementById("historyCount").textContent = history.length;
+  const container = document.getElementById("historyTableContainer");
+
+  if (!history.length) {
+    container.innerHTML = '<div class="history-empty">No search history yet. Search and save results to see them here.</div>';
+    return;
+  }
+
+  const rows = history.map(e => {
+    const d = e.data;
+    const aVal = Number(d.agrade) * 100;
+    const wVal = Number(d.wastePercent) * 100;
+    return `<tr>
+      <td class="col-time">${e.savedAt}</td>
+      <td>${e.note || '<span style="color:var(--muted);font-style:italic;">—</span>'}</td>
+      <td class="col-line">${e.params.line}</td>
+      <td>${formatDateDisplay(e.params.startDate, e.params.startShift)}</td>
+      <td>${formatDateDisplay(e.params.endDate, e.params.endShift)}</td>
+      <td>${formatNumber(d.material)}</td>
+      <td>${formatNumber(d.input)}</td>
+      <td class="val-accent">${formatNumber(d.q)}</td>
+      <td class="val-danger">${formatNumber(d.waste)}</td>
+      <td>${formatNumber(d.throughput)}</td>
+      <td class="${aVal < 99 ? 'val-danger' : 'val-accent'}">${aVal.toFixed(0)}%</td>
+      <td class="${wVal > 5.3 ? 'val-danger' : 'val-accent'}">${wVal.toFixed(2)}%</td>
+      <td>${(Number(d.productivity) * 100).toFixed(2)}%</td>
+      <td>
+        <button class="btn-load-row" onclick="loadHistoryEntry(${e.id})">Load</button>
+        <button class="btn-del-row" onclick="deleteHistoryEntry(${e.id})" title="Delete">✕</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  container.innerHTML = `
+    <table class="history-table">
+      <thead><tr>
+        <th>Saved At</th><th>Note</th><th>Line</th><th>Start</th><th>End</th>
+        <th>Material (kg)</th><th>Input (kg)</th><th>Q (kg)</th><th>Waste (kg)</th>
+        <th>Throughput</th><th>A-grade</th><th>Waste %</th><th>Productivity</th><th>Actions</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+}
+
+function exportExcel() {
+  const history = getHistory();
+  if (!history.length) { alert("No history to export!"); return; }
+
+  const headers = ["Saved At","Line","Start Date","Start Shift","End Date","End Shift","Note",
+    "Material (kg)","Additives (kg)","Input (kg)","Q (kg)","UQ (kg)",
+    "Waste (kg)","Throughput (kg/h)","A-grade (%)","Waste (%)","Productivity (%)"];
+
+  const csvRows = [headers.join(";")];
+  history.forEach(e => {
+    const d = e.data;
+    csvRows.push([
+      e.savedAt, e.params.line, e.params.startDate, e.params.startShift,
+      e.params.endDate, e.params.endShift, (e.note || '').replace(/;/g,' '),
+      Number(d.material||0), Number(d.additives||0), Number(d.input||0),
+      Number(d.q||0), Number(d.uq||0), Number(d.waste||0),
+      Number(d.throughput||0).toFixed(2),
+      (Number(d.agrade||0)*100).toFixed(2),
+      (Number(d.wastePercent||0)*100).toFixed(2),
+      (Number(d.productivity||0)*100).toFixed(2)
+    ].join(";"));
+  });
+
+  const blob = new Blob(["\uFEFF" + csvRows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const now = new Date();
+  a.href = url;
+  a.download = `FRP_History_${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+renderHistory();
+</script>
 </body>
 </html>
